@@ -2,7 +2,7 @@
 
 - Stack: Next.js (App Router), TypeScript, Tailwind CSS, Supabase (database + auth), Amazon Polly (@aws-sdk/client-polly).
 - Never hardcode secrets or keys. Use environment variables in .env.local only.
-- AWS environment variables must use the prefix `MY_` (MY_AWS_ACCESS_KEY_ID, MY_AWS_SECRET_ACCESS_KEY, MY_AWS_REGION) because Netlify does not allow variables starting with `AWS_`.
+- AWS environment variables must use the prefix `MY_` (MY*AWS_ACCESS_KEY_ID, MY_AWS_SECRET_ACCESS_KEY, MY_AWS_REGION) because Netlify does not allow variables starting with `AWS*`.
 - AWS credentials and the Supabase service_role key must NEVER reach the browser or frontend code.
 - Amazon Polly calls must only happen in a server-side Next.js API route (e.g., app/api/speak/route.ts).
 - AWS IAM permissions: only grant `polly:SynthesizeSpeech`.
@@ -15,4 +15,5 @@
 - Do not open the browser to verify. I will test myself and tell you the result.
 - If something fails twice, stop and tell me what is wrong instead of retrying.
 - Explain new files in simple words, I am a beginner.
-
+- Use components/GlideSelect for every dropdown or choice. Never use a native select element.
+- Age, health history and any typed health note are never stored on a server or logged. They are used only to build the plan.

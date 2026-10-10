@@ -1,166 +1,193 @@
 @import "tailwindcss";
 
 :root {
-  --cream: #FBF4E6;
-  --blossom-pink: #F3C6CF;
-  --mint: #BFE0C4;
-  --fresh-leaf: #8CC49A;
-  --butter-yellow: #F6E3A1;
-  --sky-blue: #BFDDEB;
-  --peach: #F6CDB0;
-  --text-outline: #2B3A2E;
+  --cream: #FDF3E7;
+  --card: #FFFAF4;
+  --navy: #1E2A44;
+  --slate: #5B6577;
+  --orange: #F47A1F;
+  --danger: #D92D20;
+  --danger-tint: #FDECEA;
+  --green: #2E9E5B;
+  --green-tint: #EAF6EE;
+  --blue: #2F7FD1;
+  --blue-tint: #EAF3FC;
+  --peach-tint: #FDEFE3;
+  --yellow: #F5B83D;
 
   --background: var(--cream);
-  --foreground: var(--text-outline);
+  --foreground: var(--navy);
 }
 
 @theme inline {
   --color-cream: var(--cream);
-  --color-blossom: var(--blossom-pink);
-  --color-mint: var(--mint);
-  --color-fresh-leaf: var(--fresh-leaf);
-  --color-butter: var(--butter-yellow);
-  --color-sky: var(--sky-blue);
-  --color-peach: var(--peach);
-  --color-text: var(--text-outline);
+  --color-card: var(--card);
+  --color-navy: var(--navy);
+  --color-slate: var(--slate);
+  --color-orange: var(--orange);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-green: var(--green);
+  --color-green-tint: var(--green-tint);
+  --color-blue: var(--blue);
+  --color-blue-tint: var(--blue-tint);
+  --color-peach-tint: var(--peach-tint);
+  --color-yellow: var(--yellow);
 
-  --font-serif: var(--font-rozha);
-  --font-sans: var(--font-hind);
-}
-
-* {
-  box-shadow: none !important;
-  border-radius: 0px !important;
-  text-shadow: none !important;
-  font-family: inherit;
+  --font-sans: var(--font-jakarta), var(--font-devanagari), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 html,
 body {
   background-color: var(--cream);
-  color: var(--text-outline);
-  font-family: var(--font-hind), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--navy);
+  font-family: var(--font-jakarta), var(--font-devanagari), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-rozha), Georgia, serif;
+/* Base custom utility styles */
+.card-shadow {
+  box-shadow: 0 12px 32px rgba(30, 42, 68, 0.08), 0 2px 6px rgba(30, 42, 68, 0.04);
 }
 
-/* Gentle ambient blossom sway */
-@keyframes blossomSway {
+.subtle-shadow {
+  box-shadow: 0 4px 16px rgba(30, 42, 68, 0.05);
+}
+
+/* Background Photo Slow Drift (Scale 1.03 to 1.09 and small pan) */
+@keyframes photoDrift {
   0% {
-    transform: rotate(0deg);
+    transform: scale(1.03) translate(0px, 0px);
   }
   50% {
-    transform: rotate(1.2deg);
+    transform: scale(1.08) translate(-10px, -6px);
   }
   100% {
-    transform: rotate(-1deg);
+    transform: scale(1.03) translate(0px, 0px);
   }
 }
 
-.animate-blossom-sway {
-  transform-origin: 880px 300px;
-  animation: blossomSway 5s ease-in-out infinite alternate;
+.animate-photo-drift {
+  animation: photoDrift 50s ease-in-out infinite alternate;
 }
 
-/* Falling blossom petals drifting softly */
-@keyframes petalDrift1 {
+/* Sun Glow Breathing (8 second cycle with bloom) */
+@keyframes sunGlowBreathe {
   0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.95;
-  }
-  85% {
-    opacity: 0.95;
-  }
-  100% {
-    transform: translate(-110px, 190px) rotate(140deg);
-    opacity: 0;
-  }
-}
-
-@keyframes petalDrift2 {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.95;
-  }
-  80% {
-    opacity: 0.95;
-  }
-  100% {
-    transform: translate(-85px, 210px) rotate(180deg);
-    opacity: 0;
-  }
-}
-
-.animate-petal-1 {
-  animation: petalDrift1 7s ease-in-out infinite;
-}
-
-.animate-petal-2 {
-  animation: petalDrift2 9s ease-in-out infinite 2.5s;
-}
-
-.animate-petal-3 {
-  animation: petalDrift1 8s ease-in-out infinite 5s;
-}
-
-/* Butterfly gentle flight flutter */
-@keyframes butterflyFly1 {
-  0% {
-    transform: translate(0, 0) rotate(-3deg);
+    opacity: 0.65;
+    transform: scale(0.92);
   }
   50% {
-    transform: translate(32px, -22px) rotate(4deg);
+    opacity: 0.95;
+    transform: scale(1.08);
   }
   100% {
-    transform: translate(0, 0) rotate(-3deg);
+    opacity: 0.65;
+    transform: scale(0.92);
   }
 }
 
-@keyframes butterflyFly2 {
-  0% {
-    transform: translate(0, 0) rotate(3deg);
-  }
-  50% {
-    transform: translate(-28px, -18px) rotate(-4deg);
-  }
-  100% {
-    transform: translate(0, 0) rotate(3deg);
-  }
+.animate-sun-glow {
+  animation: sunGlowBreathe 8s ease-in-out infinite;
 }
 
-.animate-butterfly-1 {
-  animation: butterflyFly1 6s ease-in-out infinite;
-}
-
-.animate-butterfly-2 {
-  animation: butterflyFly2 7.5s ease-in-out infinite 1s;
-}
-
-/* River ripple gentle drift */
-@keyframes riverFlow {
+/* Seamless Haze Layers Horizontal Drift */
+@keyframes hazeDrift1 {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-24px);
+    transform: translateX(-50%);
   }
 }
 
-.animate-river-flow {
-  animation: riverFlow 7s linear infinite;
+@keyframes hazeDrift2 {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hazeDrift3 {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.33%);
+  }
+}
+
+.animate-haze-1 {
+  animation: hazeDrift1 140s linear infinite;
+}
+
+.animate-haze-2 {
+  animation: hazeDrift2 100s linear infinite;
+}
+
+.animate-haze-3 {
+  animation: hazeDrift3 160s linear infinite;
+}
+
+/* Pulse dot */
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* Entrance Animations */
+@keyframes fadeRise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-rise-1 {
+  animation: fadeRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-rise-2 {
+  animation: fadeRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+  opacity: 0;
+}
+
+.animate-fade-rise-3 {
+  animation: fadeRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  opacity: 0;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .animate-photo-drift,
+  .animate-sun-glow,
+  .animate-haze-1,
+  .animate-haze-2,
+  .animate-haze-3,
+  .animate-pulse-dot,
+  .animate-fade-rise-1,
+  .animate-fade-rise-2,
+  .animate-fade-rise-3 {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }

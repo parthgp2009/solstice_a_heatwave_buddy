@@ -1,123 +1,109 @@
 "use client";
 
-import React, { useState } from "react";
-import LivingLandscape, { Language } from "./components/LivingLandscape";
+import React from "react";
+import TopBar from "@/components/TopBar";
+import HeroBackground from "@/components/HeroBackground";
+import PlanBuilderCard from "@/components/PlanBuilderCard";
+import LiveReadingCard from "@/components/LiveReadingCard";
+import SafetyPlanCard from "@/components/SafetyPlanCard";
+import FeatureRow from "@/components/FeatureRow";
+import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
+import InfoModals from "@/components/InfoModals";
+import { AppStateProvider, useAppState } from "@/context/AppStateContext";
 
-export default function Home() {
-  const [lang, setLang] = useState<Language>("en");
-  const [activeModal, setActiveModal] = useState<"privacy" | "tos" | null>(null);
-
-  const handleToggleLang = () => {
-    setLang((prev) => (prev === "en" ? "hi" : "en"));
-  };
-
-  const handleLocationClick = () => {
-    alert(
-      lang === "en"
-        ? "Location check initiated. In Phase 2, this connects to browser Geolocation and BigDataCloud reverse geocoding."
-        : "स्थान की पहचान शुरू की गई। चरण 2 में यह वास्तविक जीपीएस और मौसम से जुड़ेगा।"
-    );
-  };
+function HeroContent() {
+  const { t, setActiveModal } = useAppState();
 
   return (
-    <div className="min-h-screen bg-[#FBF4E6] text-[#2B3A2E] flex flex-col justify-between selection:bg-[#2B3A2E] selection:text-[#FBF4E6] pb-20">
-      {/* SPRING LIVING LANDSCAPE (HEADER, ~55% HERO SCENE, TEMPERATURE HEADLINE & 24-HOUR RIBBON) */}
-      <LivingLandscape
-        lang={lang}
-        onToggleLang={handleToggleLang}
-        onLocationClick={handleLocationClick}
-      />
+    <div className="relative min-h-screen flex flex-col justify-between selection:bg-[#F47A1F] selection:text-[#FFFAF4] pb-24 overflow-x-hidden">
+      {/* Background with hero photo, sun glow, haze, heat shimmer, rising specks & cream swoosh */}
+      <HeroBackground adjustedFeelsLikeTemp={40} />
 
-      {/* BELOW HERO: CLEAN PLACEHOLDER FOR STEP B (FIELD REPORT & SAFETY PLAN) */}
-      <section className="w-full max-w-4xl mx-auto px-5 sm:px-8 py-8 flex flex-col gap-6">
-        <div className="border-t-2 border-[#2B3A2E] pt-6 flex flex-col gap-3">
-          <p className="text-base sm:text-lg font-medium text-[#2B3A2E] max-w-2xl leading-relaxed">
-            {lang === "en"
-              ? "The calm single-column safety plan, job choices, and hourly hydration advice will unfold here in Step B."
-              : "शांत एकल-स्तंभ सुरक्षा योजना, कार्य विकल्प, और घंटेवार जल योजना स्टेप बी में यहां खुलेगी।"}
-          </p>
+      {/* Top Navigation Bar */}
+      <TopBar />
 
-          <div className="flex flex-wrap items-center gap-4 pt-1 text-xs font-bold uppercase tracking-wider text-[#2B3A2E]">
-            <button
-              onClick={() => setActiveModal("privacy")}
-              className="underline hover:text-[#8CC49A] cursor-pointer"
-            >
-              {lang === "en" ? "Privacy Policy" : "गोपनीयता नीति"}
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => setActiveModal("tos")}
-              className="underline hover:text-[#8CC49A] cursor-pointer"
-            >
-              {lang === "en" ? "Terms of Service" : "सेवा की शर्तें"}
-            </button>
-            <span>•</span>
-            <button
-              onClick={() =>
-                alert(
-                  lang === "en"
-                    ? "Google Sign-In will connect via Supabase in Phase 3."
-                    : "गूगल साइन-इन चरण 3 में जुड़ेगा।"
-                )
-              }
-              className="underline hover:text-[#8CC49A] cursor-pointer"
-            >
-              {lang === "en" ? "Sign In with Google" : "गूगल से साइन इन करें"}
-            </button>
+      {/* Main Hero Container */}
+      <main className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
+        <div className="grid grid-cols-1 min-[900px]:grid-cols-12 gap-8 lg:gap-10 items-start">
+          
+          {/* HERO LEFT SIDE (col-span-7 above 900px) */}
+          <div className="min-[900px]:col-span-7 flex flex-col gap-6">
+            {/* Headline Section */}
+            <div className="flex flex-col gap-2.5 max-w-2xl">
+              {/* Small uppercase orange label */}
+              <span className="text-xs sm:text-sm font-extrabold tracking-wider uppercase text-[#F47A1F]">
+                {t.tagline}
+              </span>
+
+              {/* Very large two-line bold headline in dark navy */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1E2A44] tracking-tight leading-[1.08]">
+                <span className="block">{t.headlineLine1}</span>
+                <span className="block text-[#F47A1F]">{t.headlineLine2}</span>
+              </h1>
+
+              {/* Supporting text */}
+              <p className="text-sm sm:text-base text-[#5B6577] font-medium leading-relaxed max-w-xl">
+                {t.supportingText}
+              </p>
+            </div>
+
+            {/* Rounded Plan Builder Card */}
+            <PlanBuilderCard />
+
+            {/* Feature Row on Desktop (Under plan builder or below hero) */}
+            <div className="hidden min-[900px]:block mt-2">
+              <FeatureRow />
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* SLIM FIXED BOTTOM DISCLAIMER STRIP */}
-      <aside className="fixed bottom-0 left-0 right-0 z-40 bg-[#2B3A2E] text-[#FBF4E6] py-2 px-4 border-t-2 border-[#2B3A2E]">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-          <div className="text-center sm:text-left text-[11px] opacity-90 font-medium">
-            {lang === "en"
-              ? "General guidance only, not medical diagnosis. In heat emergencies, call 108 immediately."
-              : "केवल सामान्य सुरक्षा सलाह, चिकित्सकीय निदान नहीं। आपातकाल में तुरंत 108 पर कॉल करें।"}
-          </div>
-          <a
-            href="tel:108"
-            className="inline-block bg-[#F6CDB0] text-[#2B3A2E] px-3 py-1 font-bold text-[11px] uppercase tracking-wider border-2 border-[#2B3A2E] hover:bg-[#F6E3A1] shrink-0"
-          >
-            {lang === "en" ? "Call 108 Ambulance" : "108 एम्बुलेंस डायल करें"}
-          </a>
-        </div>
-      </aside>
+          {/* HERO RIGHT SIDE (col-span-5 above 900px) */}
+          <div className="min-[900px]:col-span-5 flex flex-col gap-6">
+            {/* Card 1: Floating Live Reading Card */}
+            <LiveReadingCard />
 
-      {/* MODAL FOR PRIVACY POLICY OR TERMS */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 bg-[#2B3A2E]/70 flex items-center justify-center p-4">
-          <div className="bg-[#FBF4E6] border-2 border-[#2B3A2E] max-w-lg w-full p-6 text-[#2B3A2E]">
-            <h2 className="text-xl font-bold font-serif uppercase tracking-wider mb-3">
-              {activeModal === "privacy"
-                ? lang === "en"
-                  ? "Privacy Policy"
-                  : "गोपनीयता नीति"
-                : lang === "en"
-                ? "Terms of Service"
-                : "सेवा की शर्तें"}
-            </h2>
-            <p className="text-xs sm:text-sm text-[#2B3A2E] leading-relaxed mb-6 font-medium">
-              {activeModal === "privacy"
-                ? lang === "en"
-                  ? "Heatwave Buddy does not log or persist user coordinates. GPS data is evaluated in-memory strictly for live weather requests. Only high-level city names are saved for logged-in accounts."
-                  : "लू साथी जीपीएस निर्देशांकों को कभी भी स्टोर या लॉग नहीं करता। निर्देशांकों का उपयोग केवल लाइव मौसम के लिए होता है।"
-                : lang === "en"
-                ? "Heatwave Buddy provides occupational heat stress guidance and does not replace certified emergency healthcare. Transfer severe cases immediately via 108."
-                : "लू साथी अत्यधिक गर्मी के दौरान प्राथमिक मार्गदर्शन प्रदान करता है। गंभीर लक्षणों पर 108 डायल करें।"}
-            </p>
-            <div className="text-right">
-              <button
-                onClick={() => setActiveModal(null)}
-                className="border-2 border-[#2B3A2E] bg-[#2B3A2E] text-[#FBF4E6] px-4 py-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer hover:bg-[#8CC49A] hover:text-[#2B3A2E]"
-              >
-                {lang === "en" ? "Close" : "बंद करें"}
-              </button>
+            {/* Card 2: Floating Safety Plan Card (Phone style) */}
+            <SafetyPlanCard />
+
+            {/* Feature Row on Mobile (Stacked after right-side cards under 900px) */}
+            <div className="block min-[900px]:hidden mt-2">
+              <FeatureRow />
             </div>
           </div>
         </div>
-      )}
+
+        {/* Quick Footer Links for Modals */}
+        <div className="mt-8 pt-6 border-t border-[#1E2A44]/10 flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-[#5B6577]">
+          <button
+            type="button"
+            onClick={() => setActiveModal("privacy")}
+            className="hover:text-[#F47A1F] cursor-pointer"
+          >
+            Privacy Policy
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={() => setActiveModal("terms")}
+            className="hover:text-[#F47A1F] cursor-pointer"
+          >
+            Terms of Service
+          </button>
+        </div>
+      </main>
+
+      {/* Slim Fixed Bottom Disclaimer Strip in Navy */}
+      <BottomDisclaimerStrip />
+
+      {/* Modals */}
+      <InfoModals />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <AppStateProvider>
+      <HeroContent />
+    </AppStateProvider>
   );
 }
