@@ -5,9 +5,10 @@
 
 ### Multi-Page System Architecture
 The application is structured into specialized routes:
-* **`/` (Home)**: High-impact hero, real-time adjusted temperature, live reading card, phone-style plan preview, and the India Heat Toll crisis tagline banner.
-* **`/about` (About)**: Detailed public health context featuring the **India Heat Toll Statistics (2024)** infographic (`tagline.jpeg`), Solstice mission, scientific heat model methodology, and prevention steps.
+* **`/` (Home)**: High-impact hero, real-time adjusted temperature station, primary action CTAs, crisis tagline banner, and portals to all dedicated sections.
 * **`/plan` (Safety Plan)**: Dedicated full-screen plan builder with live risk assessment, customized hydration scheduling, and tailored age/occupation/health protocols.
+* **`/weather` (Live Weather & Heat Index)**: Dedicated weather monitoring station with city selector, live feels-like gauge, 24-hour hour control slider, and full 24-hour hourly forecast breakdown table.
+* **`/about` (Crisis Stats & About)**: Detailed public health context featuring the **India Heat Toll Statistics (2024)** infographic (`tagline.jpeg`), Solstice mission, scientific heat model methodology, and prevention steps.
 * **`/faqs` (FAQs)**: Interactive bilingual question-and-answer library covering heatstroke warning signs, UV index adjustments, and emergency protocols.
 * **`/privacy` (Privacy Policy)**: Strict zero-storage guarantees (exact GPS coordinates never stored, local-only health considerations, permanent under-18 privacy lock).
 * **`/terms` (Terms of Service)**: Legal and medical disclaimers emphasizing occupational heat stress guidance and immediate 108 ambulance dialing.
@@ -111,6 +112,6 @@ Converted to TypeScript with explicit prop types. Used for all single-choice con
 
 ## 5. Development Phases
 
-* **Step A1 (Completed)**: Hero design look complete (TopBar, headline, PlanBuilderCard with all fields rendered, FeatureRow, LiveReadingCard, SafetyPlanCard, HeroBackground with photo analysis and motion, BottomDisclaimerStrip, bilingual context).
-* **Step A2**: Full wiring of inputs and `lib/heatModel.ts` across cards, gauge, hour control, and plan, with fake hourly profile and worked examples verification panel.
-* **Step B**: Below-hero sections: 24-hour SVG area chart (no scrollbars, synchronized with hero hour control), full safety plan details, Amazon Polly "Listen" button, hydration tracker, "How it works", FAQs, and footer.
+* **Step A1 (Completed)**: Hero design look complete (TopBar with Solstice logo, headline, PlanBuilderCard with all fields rendered, FeatureRow, LiveReadingCard, SafetyPlanCard, HeroBackground with photo analysis and motion, BottomDisclaimerStrip, bilingual context, multi-page routing).
+* **Step A2 (Completed)**: Full reactive wiring of inputs and `lib/heatModel.ts` across cards, SVG semicircle gauge needle sweep, interactive hour control slider, strictness level logic (+1 tier for vulnerable groups), computed safe/avoid outdoor windows, and interactive Dev Panel (`DevHeatModelPanel.tsx`) verifying all 4 worked examples via `?dev=true`.
+* **Step B**: Below-hero sections: 24-hour SVG area chart of adjusted feels-like (responsive, no scrollbars, synced with hour control, shaded safe hours), full safety plan section with Amazon Polly "Listen" button and hydration tracker, "How it works" numbered list, expanding FAQs, and footer.

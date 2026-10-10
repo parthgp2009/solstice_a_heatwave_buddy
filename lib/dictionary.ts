@@ -10,6 +10,7 @@ export interface TranslationDictionary {
     home: string;
     about: string;
     safetyPlan: string;
+    weather: string;
     faqs: string;
     signIn: string;
   };
@@ -75,8 +76,9 @@ export const DICTIONARY: Record<Language, TranslationDictionary> = {
     supportingText: "Enter your city and a few details to get live temperature, an adjusted feels-like and a personalised safety plan, made for people like you.",
     nav: {
       home: "Home",
-      about: "About",
+      about: "Crisis Stats",
       safetyPlan: "Safety Plan",
+      weather: "Live Weather",
       faqs: "FAQs",
       signIn: "Sign in with Google",
     },
@@ -145,8 +147,9 @@ export const DICTIONARY: Record<Language, TranslationDictionary> = {
     supportingText: "अपने शहर और कुछ विवरण दर्ज करें ताकि आपको लाइव तापमान, समायोजित हीट इंडेक्स और एक व्यक्तिगत सुरक्षा योजना मिल सके।",
     nav: {
       home: "होम",
-      about: "के बारे में",
+      about: "आंकड़े व मिशन",
       safetyPlan: "सुरक्षा योजना",
+      weather: "लाइव मौसम",
       faqs: "अक्सर पूछे जाने वाले सवाल",
       signIn: "गूगल से साइन इन करें",
     },

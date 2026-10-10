@@ -8,6 +8,7 @@ import SafetyPlanCard from "@/components/SafetyPlanCard";
 import FeatureRow from "@/components/FeatureRow";
 import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
 import InfoModals from "@/components/InfoModals";
+import DevHeatModelPanel from "@/components/DevHeatModelPanel";
 import { AppStateProvider, useAppState } from "@/context/AppStateContext";
 
 function PlanContent() {
@@ -52,6 +53,7 @@ function PlanContent() {
 
       <BottomDisclaimerStrip />
       <InfoModals />
+      <DevHeatModelPanel />
     </div>
   );
 }

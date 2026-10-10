@@ -23,8 +23,9 @@ export default function TopBar() {
 
   const navLinks = [
     { href: "/", label: t.nav.home },
-    { href: "/about", label: t.nav.about },
     { href: "/plan", label: t.nav.safetyPlan },
+    { href: "/weather", label: t.nav.weather },
+    { href: "/about", label: t.nav.about },
     { href: "/faqs", label: t.nav.faqs }
   ];
 

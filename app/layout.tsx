@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   description: "Live temperature, adjusted feels-like, and personalised heat safety plans for India.",
 };
 
+import Providers from "@/components/Providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${notoSansDevanagari.variable} h-full`}>
       <body className="min-h-full flex flex-col font-sans bg-[#FDF3E7] text-[#1E2A44] antialiased">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

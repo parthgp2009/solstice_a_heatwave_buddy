@@ -201,3 +201,42 @@ export function computeSafeWindows(
 
   return { saferRanges, avoidRanges, hourlyAdjusted };
 }
+
+/**
+ * Standard verification cases defined in the project specification.
+ */
+export const WORKED_EXAMPLES_TESTS = [
+  {
+    id: 1,
+    apparentTemp: 38,
+    uv: 4,
+    bucket: "Up to 2 hours" as ExposureBucket,
+    expectedAdjusted: 38,
+    expectedRisk: "Danger" as RiskLevel
+  },
+  {
+    id: 2,
+    apparentTemp: 38,
+    uv: 7,
+    bucket: "2 to 6 hours" as ExposureBucket,
+    expectedAdjusted: 40,
+    expectedRisk: "Danger" as RiskLevel
+  },
+  {
+    id: 3,
+    apparentTemp: 41,
+    uv: 12,
+    bucket: "More than 6 hours" as ExposureBucket,
+    expectedAdjusted: 44.5,
+    expectedRisk: "Danger" as RiskLevel
+  },
+  {
+    id: 4,
+    apparentTemp: 44,
+    uv: 10,
+    bucket: "2 to 6 hours" as ExposureBucket,
+    expectedAdjusted: 46,
+    expectedRisk: "Extreme" as RiskLevel
+  }
+];
+
