@@ -5,20 +5,18 @@ import { useAppState } from "@/context/AppStateContext";
 import {
   adjustedFeelsLikeForHour,
   computeSafeWindows,
-  isVulnerableUser,
-  DEFAULT_HOURLY_APPARENT_TEMP,
-  DEFAULT_HOURLY_UV_INDEX
+  isVulnerableUser
 } from "@/lib/heatModel";
 
 export default function HourlyChartSection() {
-  const { city, sunHours, selectedHour, setSelectedHour, lang, age, healthHistory } = useAppState();
+  const { city, sunHours, selectedHour, setSelectedHour, lang, age, healthHistory, weatherData } = useAppState();
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
 
   const isVulnerable = isVulnerableUser(age, healthHistory);
 
   const { saferRanges, avoidRanges } = computeSafeWindows(
-    DEFAULT_HOURLY_APPARENT_TEMP,
-    DEFAULT_HOURLY_UV_INDEX,
+    weatherData.hourlyApparent,
+    weatherData.hourlyUv,
     sunHours,
     isVulnerable
   );
@@ -27,8 +25,8 @@ export default function HourlyChartSection() {
   const hourlyData = Array.from({ length: 24 }, (_, h) => {
     const reading = adjustedFeelsLikeForHour(
       h,
-      DEFAULT_HOURLY_APPARENT_TEMP,
-      DEFAULT_HOURLY_UV_INDEX,
+      weatherData.hourlyApparent,
+      weatherData.hourlyUv,
       sunHours,
       isVulnerable
     );

@@ -8,8 +8,6 @@ import GlideSelect from "@/components/GlideSelect";
 import { useAppState } from "@/context/AppStateContext";
 import { CITIES_CONFIG } from "@/lib/dictionary";
 import {
-  DEFAULT_HOURLY_APPARENT_TEMP,
-  DEFAULT_HOURLY_UV_INDEX,
   adjustedFeelsLike,
   getRiskLevel,
   getUvLabel
@@ -23,7 +21,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 export default function WeatherPage() {
-  const { lang, city, setCity, customCity, setCustomCity, sunHours } = useAppState();
+  const { lang, city, setCity, customCity, setCustomCity, sunHours, weatherData } = useAppState();
 
   const cityOptions = CITIES_CONFIG.map(c => ({
     value: c.value,
@@ -138,8 +136,8 @@ export default function WeatherPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1E2A44]/10">
-                {DEFAULT_HOURLY_APPARENT_TEMP.map((raw, h) => {
-                  const uv = DEFAULT_HOURLY_UV_INDEX[h];
+                {weatherData.hourlyApparent.map((raw, h) => {
+                  const uv = weatherData.hourlyUv[h] ?? 0;
                   const adj = adjustedFeelsLike(raw, uv, sunHours);
                   const risk = getRiskLevel(adj);
 

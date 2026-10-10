@@ -8,9 +8,7 @@ import {
   getRiskLevel,
   adjustedFeelsLikeForHour,
   computeSafeWindows,
-  isVulnerableUser,
-  DEFAULT_HOURLY_APPARENT_TEMP,
-  DEFAULT_HOURLY_UV_INDEX
+  isVulnerableUser
 } from "@/lib/heatModel";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Tick02Icon, Alert02Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
@@ -66,19 +64,19 @@ function DevHeatModelPanelInner() {
   const isDevUrl = searchParams.get("dev") === "true" || searchParams.get("test") === "true";
   const [isOpenOverride, setIsOpenOverride] = useState<boolean | null>(null);
   const isOpen = isOpenOverride !== null ? isOpenOverride : isDevUrl;
-  const { sunHours, selectedHour, age, healthHistory } = useAppState();
+  const { sunHours, selectedHour, age, healthHistory, weatherData } = useAppState();
 
   const isVulnerable = isVulnerableUser(age, healthHistory);
   const reading = adjustedFeelsLikeForHour(
     selectedHour,
-    DEFAULT_HOURLY_APPARENT_TEMP,
-    DEFAULT_HOURLY_UV_INDEX,
+    weatherData.hourlyApparent,
+    weatherData.hourlyUv,
     sunHours,
     isVulnerable
   );
   const { saferRanges, avoidRanges } = computeSafeWindows(
-    DEFAULT_HOURLY_APPARENT_TEMP,
-    DEFAULT_HOURLY_UV_INDEX,
+    weatherData.hourlyApparent,
+    weatherData.hourlyUv,
     sunHours,
     isVulnerable
   );

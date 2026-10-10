@@ -13,10 +13,9 @@ import { useAppState } from "@/context/AppStateContext";
 import {
   adjustedFeelsLikeForHour,
   computeSafeWindows,
-  isVulnerableUser,
-  DEFAULT_HOURLY_APPARENT_TEMP,
-  DEFAULT_HOURLY_UV_INDEX
+  isVulnerableUser
 } from "@/lib/heatModel";
+import { PlanAIResponse } from "@/lib/aiPlan";
 import AudioListenButton from "@/components/AudioListenButton";
 
 const subscribeReducedMotion = (callback: () => void) => {
@@ -32,14 +31,19 @@ export default function SafetyPlanCard() {
     lang,
     setLang,
     t,
+    city,
     age,
     occupation,
     sunHours,
     healthHistory,
-    selectedHour
+    customHealthNote,
+    selectedHour,
+    weatherData
   } = useAppState();
 
   const [glassesFilled, setGlassesFilled] = useState<number>(0);
+  const [aiPlan, setAiPlan] = useState<PlanAIResponse | null>(null);
+  const [isLoadingAiPlan, setIsLoadingAiPlan] = useState<boolean>(false);
   const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, getReducedMotionServerSnapshot);
 
   // Strictness step: for Under 18, Over 60, or history of Heatstroke / Heat exhaustion
@@ -48,14 +52,14 @@ export default function SafetyPlanCard() {
   // Compute live readings and windows from heatModel
   const reading = adjustedFeelsLikeForHour(
     selectedHour,
-    DEFAULT_HOURLY_APPARENT_TEMP,
-    DEFAULT_HOURLY_UV_INDEX,
+    weatherData.hourlyApparent,
+    weatherData.hourlyUv,
     sunHours,
     isVulnerable
   );
   const { saferRanges, avoidRanges } = computeSafeWindows(
-    DEFAULT_HOURLY_APPARENT_TEMP,
-    DEFAULT_HOURLY_UV_INDEX,
+    weatherData.hourlyApparent,
+    weatherData.hourlyUv,
     sunHours,
     isVulnerable
   );
@@ -80,8 +84,54 @@ export default function SafetyPlanCard() {
     return () => timers.forEach(clearTimeout);
   }, [reducedMotion]);
 
-  // Specific guidance text by age
+  // Fetch AI plan from server-side /api/plan route with graceful fallback
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchAiPlan() {
+      setIsLoadingAiPlan(true);
+      try {
+        const res = await fetch("/api/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            city,
+            age,
+            occupation,
+            sunHours,
+            healthHistory,
+            customHealthNote,
+            lang,
+            currentTemp: weatherData.currentTemp,
+            adjustedTemp: reading.adjusted,
+            riskLevel: effectiveRiskLevel
+          })
+        });
+        if (res.ok) {
+          const data = (await res.json()) as PlanAIResponse;
+          if (!cancelled) {
+            setAiPlan(data);
+          }
+        }
+      } catch {
+        // Fallback remains active
+      } finally {
+        if (!cancelled) {
+          setIsLoadingAiPlan(false);
+        }
+      }
+    }
+
+    const timer = setTimeout(fetchAiPlan, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [age, occupation, sunHours, healthHistory, customHealthNote, lang, city, reading.adjusted, effectiveRiskLevel, weatherData.currentTemp]);
+
+  // Specific guidance text by age (uses AI plan if present, else clinical fallback)
   const getAgeAdvice = () => {
+    if (aiPlan?.ageAdvice) return aiPlan.ageAdvice;
     if (lang === "hi") {
       if (age === "Under 18")
         return "धूप में कम समय रहें, हर 30 मिनट में छांव लें, बड़ों की देखरेख में खेलें और पार्क किए वाहन में कभी न बैठें।";
@@ -100,8 +150,9 @@ export default function SafetyPlanCard() {
     return "Standard heat precautions: pace yourself and maintain steady fluid intake.";
   };
 
-  // Specific guidance text by occupation
+  // Specific guidance text by occupation (uses AI plan if present, else practical fallback)
   const getOccupationAdvice = () => {
+    if (aiPlan?.occupationAdvice) return aiPlan.occupationAdvice;
     if (lang === "hi") {
       if (occupation === "Delivery Driver")
         return "हवादार हेलमेट पहनें, लंबी सवारी दोपहर बाद करें, और दो ऑर्डर के बीच छांव में सुस्ताएं।";
@@ -162,7 +213,10 @@ export default function SafetyPlanCard() {
     return list;
   };
 
-  const healthAdvices = getHealthAdvice();
+  const healthAdvices =
+    aiPlan?.healthAdvice && aiPlan.healthAdvice.length > 0
+      ? aiPlan.healthAdvice
+      : getHealthAdvice();
 
   // Chips summary
   const summaryChips = [
@@ -376,9 +430,26 @@ export default function SafetyPlanCard() {
 
           {/* "For you" personalized tips section */}
           <div className="mt-1 pt-2 border-t border-[#F47A1F]/20 flex flex-col gap-1">
-            <span className="text-[11px] font-extrabold text-[#1E2A44]">
-              {t.planCard.forYouTitle}:
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold text-[#1E2A44]">
+                {t.planCard.forYouTitle}:
+              </span>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  aiPlan?.source === "gemini"
+                    ? "bg-[#F47A1F]/15 text-[#F47A1F] border border-[#F47A1F]/30"
+                    : "bg-[#1E2A44]/10 text-[#5B6577]"
+                }`}
+              >
+                {isLoadingAiPlan
+                  ? lang === "hi"
+                    ? "अपडेट हो रहा है..."
+                    : "Updating..."
+                  : aiPlan?.source === "gemini"
+                  ? "Gemini AI Tailored"
+                  : "Clinical Protocols"}
+              </span>
+            </div>
             <p className="text-[11px] text-[#1E2A44] leading-relaxed">
               • <span className="font-semibold">{age}:</span> {getAgeAdvice()}
             </p>

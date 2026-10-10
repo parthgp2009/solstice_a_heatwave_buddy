@@ -51,7 +51,8 @@ export default function PlanBuilderCard() {
     setCustomHealthNote,
     rememberDevice,
     setRememberDevice,
-    setPlanSubmitted
+    setPlanSubmitted,
+    setSelectedCityCoords
   } = useAppState();
 
   const [activeMenuCount, setActiveMenuCount] = useState<number>(0);
@@ -139,12 +140,16 @@ export default function PlanBuilderCard() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      () => {
-        setCity("Delhi"); // Fallback / mock detected city for now
+      pos => {
+        setSelectedCityCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        setCity("OTHER_SEARCH");
+        setCustomCity(lang === "en" ? "Current Location (GPS)" : "वर्तमान स्थान (GPS)");
+        setCitySearchQuery("");
+        setCitySuggestions([]);
         alert(
           lang === "en"
-            ? "Location detected successfully (Delhi, DL). Coordinates used once and discarded."
-            : "स्थान सफलतापूर्वक पहचाना गया (दिल्ली, DL)। निर्देशांक कभी सहेजे नहीं जाते।"
+            ? "Location detected successfully! Live weather loaded for your coordinates."
+            : "स्थान सफलतापूर्वक पहचाना गया! आपके निर्देशांक के लिए लाइव मौसम लोड किया गया।"
         );
       },
       () => {
@@ -183,6 +188,7 @@ export default function PlanBuilderCard() {
                 setCity(val);
                 if (val !== "OTHER_SEARCH") {
                   setCustomCity("");
+                  setSelectedCityCoords(null);
                   setCitySuggestions([]);
                 }
               }}
@@ -230,6 +236,7 @@ export default function PlanBuilderCard() {
                         onClick={() => {
                           setCustomCity(`${s.name}${s.admin1 ? `, ${s.admin1}` : ""}`);
                           setCitySearchQuery(`${s.name}${s.admin1 ? `, ${s.admin1}` : ""}`);
+                          setSelectedCityCoords({ latitude: s.latitude, longitude: s.longitude });
                           setCitySuggestions([]);
                         }}
                         className="text-left px-3 py-2 text-xs text-[#1E2A44] hover:bg-[#F9D9B8] transition-colors cursor-pointer"

@@ -12,9 +12,7 @@ import { useAppState } from "@/context/AppStateContext";
 import {
   adjustedFeelsLikeForHour,
   RiskLevel,
-  isVulnerableUser,
-  DEFAULT_HOURLY_APPARENT_TEMP,
-  DEFAULT_HOURLY_UV_INDEX
+  isVulnerableUser
 } from "@/lib/heatModel";
 
 const subscribeReducedMotion = (callback: () => void) => {
@@ -34,7 +32,9 @@ export default function LiveReadingCard() {
     setSelectedHour,
     t,
     age,
-    healthHistory
+    healthHistory,
+    weatherData,
+    isLoadingWeather
   } = useAppState();
 
   const [expandedHow, setExpandedHow] = useState(false);
@@ -46,11 +46,11 @@ export default function LiveReadingCard() {
 
   const isVulnerable = isVulnerableUser(age, healthHistory);
 
-  // Compute live readings for current selectedHour
+  // Compute live readings for current selectedHour using live or fallback weather data
   const reading = adjustedFeelsLikeForHour(
     selectedHour,
-    DEFAULT_HOURLY_APPARENT_TEMP,
-    DEFAULT_HOURLY_UV_INDEX,
+    weatherData.hourlyApparent,
+    weatherData.hourlyUv,
     sunHours,
     isVulnerable
   );
@@ -130,8 +130,8 @@ export default function LiveReadingCard() {
 
         {/* Live indicator with pulsing dot */}
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#EAF6EE] text-[#2E9E5B] border border-[#2E9E5B]/25 rounded-full text-[11px] font-bold">
-          <span className="w-2 h-2 rounded-full bg-[#2E9E5B] animate-pulse-dot" />
-          <span>{t.liveCard.liveNow}</span>
+          <span className={`w-2 h-2 rounded-full ${isLoadingWeather ? "bg-[#F5B83D] animate-ping" : "bg-[#2E9E5B] animate-pulse-dot"}`} />
+          <span>{isLoadingWeather ? "Updating..." : weatherData.isLive ? "Open-Meteo Live" : t.liveCard.liveNow}</span>
         </div>
       </div>
 

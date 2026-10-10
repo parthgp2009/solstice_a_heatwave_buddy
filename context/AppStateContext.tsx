@@ -3,6 +3,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Language, DICTIONARY, TranslationDictionary } from "@/lib/dictionary";
 import { ExposureBucket } from "@/lib/heatModel";
+import {
+  WeatherData,
+  Coordinates,
+  CITY_COORDINATES,
+  DEFAULT_WEATHER_DATA,
+  fetchOpenMeteoWeather
+} from "@/lib/weather";
 
 export interface AppState {
   lang: Language;
@@ -38,6 +45,12 @@ export interface AppState {
   selectedHour: number;
   setSelectedHour: (hour: number) => void;
 
+  // Live Weather state
+  weatherData: WeatherData;
+  isLoadingWeather: boolean;
+  selectedCityCoords: Coordinates | null;
+  setSelectedCityCoords: (coords: Coordinates | null) => void;
+
   // Modal & UI state
   activeModal: "privacy" | "terms" | "how_we_calc" | null;
   setActiveModal: (m: "privacy" | "terms" | "how_we_calc" | null) => void;
@@ -63,6 +76,47 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [selectedHour, setSelectedHour] = useState<number>(14);
   const [activeModal, setActiveModal] = useState<"privacy" | "terms" | "how_we_calc" | null>(null);
   const [planSubmitted, setPlanSubmitted] = useState<boolean>(false);
+  const [selectedCityCoords, setSelectedCityCoords] = useState<Coordinates | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData>(DEFAULT_WEATHER_DATA);
+  const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false);
+
+  // Live weather fetch on city or selected coordinates change
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadWeather() {
+      let coords: Coordinates;
+      if (selectedCityCoords) {
+        coords = selectedCityCoords;
+      } else if (CITY_COORDINATES[city]) {
+        coords = CITY_COORDINATES[city];
+      } else {
+        coords = CITY_COORDINATES["Delhi"];
+      }
+
+      setIsLoadingWeather(true);
+      try {
+        const data = await fetchOpenMeteoWeather(coords.latitude, coords.longitude);
+        if (!isCancelled) {
+          setWeatherData(data);
+        }
+      } catch {
+        if (!isCancelled) {
+          setWeatherData(DEFAULT_WEATHER_DATA);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingWeather(false);
+        }
+      }
+    }
+
+    loadWeather();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [city, selectedCityCoords]);
 
   // Load from localStorage only if rememberDevice was previously turned on AND not under 18
   useEffect(() => {
@@ -166,7 +220,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         activeModal,
         setActiveModal,
         planSubmitted,
-        setPlanSubmitted
+        setPlanSubmitted,
+        weatherData,
+        isLoadingWeather,
+        selectedCityCoords,
+        setSelectedCityCoords
       }}
     >
       {children}
