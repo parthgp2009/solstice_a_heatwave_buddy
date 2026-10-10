@@ -1,29 +1,96 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f3ee;
-  --foreground: #1c1917;
-  --card-bg: #fbfaf7;
-  --border-color: #d6d3cb;
-  --danger-color: #b91c1c;
-  --caution-color: #b45309;
-  --safe-color: #15803d;
+  --clay-cream: #EFE0C0;
+  --turmeric: #E3A81F;
+  --terracotta: #C4552F;
+  --deep-leaf-green: #1E4A38;
+  --river-indigo: #24407A;
+  --ink: #16130F;
+
+  --background: var(--clay-cream);
+  --foreground: var(--ink);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-clay: var(--clay-cream);
+  --color-turmeric: var(--turmeric);
+  --color-terracotta: var(--terracotta);
+  --color-leaf: var(--deep-leaf-green);
+  --color-river: var(--river-indigo);
+  --color-ink: var(--ink);
+
+  --font-serif: var(--font-rozha);
+  --font-sans: var(--font-hind);
 }
 
+* {
+  box-shadow: none !important;
+  border-radius: 0px !important;
+  text-shadow: none !important;
+  font-family: inherit;
+}
+
+html,
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--clay-cream);
+  color: var(--ink);
+  font-family: var(--font-hind), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Remove all box shadows and smooth animated transforms */
-* {
-  box-shadow: none !important;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-rozha), Georgia, serif;
+}
+
+/* Subtle leaf sway animation - no hover required */
+@keyframes leafSway {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(-1.5deg);
+  }
+}
+
+.animate-leaf-sway {
+  transform-origin: top center;
+  animation: leafSway 4.5s ease-in-out infinite alternate;
+}
+
+/* Gentle river ripple drift */
+@keyframes riverDrift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-18px);
+  }
+}
+
+.animate-river-ripple {
+  animation: riverDrift 6s linear infinite;
+}
+
+/* Gentle bird drift */
+@keyframes birdFly {
+  0% {
+    transform: translateX(-80px);
+  }
+  100% {
+    transform: translateX(110vw);
+  }
+}
+
+.animate-bird-flight {
+  animation: birdFly 32s linear infinite;
 }
