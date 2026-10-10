@@ -1,22 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft01Icon,
   Sun01Icon,
   Briefcase01Icon,
   GlassWaterIcon,
-  Alert02Icon,
-  Tick02Icon,
-  UserIcon
+  Alert02Icon
 } from "@hugeicons/core-free-icons";
 import { useAppState } from "@/context/AppStateContext";
 import {
   adjustedFeelsLikeForHour,
   computeSafeWindows,
-  RiskLevel
+  isVulnerableUser,
+  DEFAULT_HOURLY_APPARENT_TEMP,
+  DEFAULT_HOURLY_UV_INDEX
 } from "@/lib/heatModel";
+import AudioListenButton from "@/components/AudioListenButton";
+
+const subscribeReducedMotion = (callback: () => void) => {
+  const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+};
+const getReducedMotionSnapshot = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const getReducedMotionServerSnapshot = () => false;
 
 export default function SafetyPlanCard() {
   const {
@@ -31,42 +40,35 @@ export default function SafetyPlanCard() {
   } = useAppState();
 
   const [glassesFilled, setGlassesFilled] = useState<number>(0);
-  const [reducedMotion, setReducedMotion] = useState<boolean>(false);
-
-  useEffect(() => {
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(motionQuery.matches);
-  }, []);
-
-  // Compute live readings and windows from heatModel
-  const reading = adjustedFeelsLikeForHour(selectedHour, undefined, undefined, sunHours);
-  const { saferRanges, avoidRanges } = computeSafeWindows(undefined, undefined, sunHours);
+  const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, getReducedMotionServerSnapshot);
 
   // Strictness step: for Under 18, Over 60, or history of Heatstroke / Heat exhaustion
-  const isVulnerable =
-    age === "Under 18" ||
-    age === "Over 60" ||
-    healthHistory.includes("heatstroke") ||
-    healthHistory.includes("exhaustion");
+  const isVulnerable = isVulnerableUser(age, healthHistory);
 
-  const getStricterLevel = (lvl: RiskLevel): RiskLevel => {
-    if (!isVulnerable) return lvl;
-    if (lvl === "Low") return "Caution";
-    if (lvl === "Caution") return "Danger";
-    return "Extreme";
-  };
+  // Compute live readings and windows from heatModel
+  const reading = adjustedFeelsLikeForHour(
+    selectedHour,
+    DEFAULT_HOURLY_APPARENT_TEMP,
+    DEFAULT_HOURLY_UV_INDEX,
+    sunHours,
+    isVulnerable
+  );
+  const { saferRanges, avoidRanges } = computeSafeWindows(
+    DEFAULT_HOURLY_APPARENT_TEMP,
+    DEFAULT_HOURLY_UV_INDEX,
+    sunHours,
+    isVulnerable
+  );
 
-  const effectiveRiskLevel = getStricterLevel(reading.riskLevel);
+  const effectiveRiskLevel = reading.riskLevel;
 
   // Staggered fill for hydration glass icons on load
   const totalGlasses = 8;
-  useEffect(() => {
-    if (reducedMotion) {
-      setGlassesFilled(totalGlasses);
-      return;
-    }
+  const displayGlasses = reducedMotion ? totalGlasses : glassesFilled;
 
-    setGlassesFilled(0);
+  useEffect(() => {
+    if (reducedMotion) return;
+
     const timers: NodeJS.Timeout[] = [];
     for (let i = 1; i <= totalGlasses; i++) {
       timers.push(
@@ -173,10 +175,43 @@ export default function SafetyPlanCard() {
     healthHistory.includes("fatigue") ? "Fatigue" : null
   ].filter(Boolean) as string[];
 
+  const planSpeechText =
+    lang === "hi"
+      ? `आपकी दैनिक हीट सुरक्षा योजना। वर्तमान हीट स्तर: ${effectiveRiskLevel}, अनुमानित तापमान ${reading.adjusted} डिग्री सेल्सियस। ${
+          saferRanges.length > 0
+            ? `बाहर निकलने का सुरक्षित समय: ${saferRanges.join(", ")}।`
+            : "सुबह 8 बजे से पहले ही बाहर निकलें।"
+        } ${
+          avoidRanges.length > 0 ? `दोपहर की तेज धूप से बचें: ${avoidRanges.join(", ")}।` : ""
+        } जलपान अनुसूची: हर 30 मिनट में 250 मिलीलीटर पानी पिएं। ${
+          age ? `उम्र ${age} के लिए सलाह: ${getAgeAdvice()}` : ""
+        } ${
+          occupation && occupation !== "Not specified"
+            ? `व्यवसाय ${occupation} के लिए सलाह: ${getOccupationAdvice()}`
+            : ""
+        } ${
+          healthAdvices.length > 0 ? `स्वास्थ्य सलाह: ${healthAdvices.join(" ")}` : ""
+        }`.slice(0, 1400)
+      : `Your Daily Heat Safety Plan. Current heat level: ${effectiveRiskLevel}, with an adjusted feels-like temperature of ${reading.adjusted} degrees Celsius. ${
+          saferRanges.length > 0
+            ? `Safest outdoor windows are: ${saferRanges.join(", ")}.`
+            : "Prefer early morning hours before 8 AM."
+        } ${
+          avoidRanges.length > 0 ? `Avoid peak afternoon exposure: ${avoidRanges.join(", ")}.` : ""
+        } Hydration schedule: drink 250 milliliters of water every 30 minutes. ${
+          age ? `Advice for age ${age}: ${getAgeAdvice()}` : ""
+        } ${
+          occupation && occupation !== "Not specified"
+            ? `Advice for ${occupation}: ${getOccupationAdvice()}`
+            : ""
+        } ${
+          healthAdvices.length > 0 ? `Health considerations: ${healthAdvices.join(" ")}` : ""
+        }`.slice(0, 1400);
+
   return (
     <div className="w-full bg-[#FFFAF4] border border-[#1E2A44]/15 rounded-[22px] p-5 sm:p-6 card-shadow animate-fade-rise-2 flex flex-col gap-4">
       {/* Phone-style Top Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#1E2A44]/10">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#1E2A44]/10">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -190,26 +225,29 @@ export default function SafetyPlanCard() {
           </span>
         </div>
 
-        {/* Small EN / HI toggle */}
-        <div className="flex items-center bg-[#FBEBD9] rounded-full p-0.5 text-[11px] font-bold">
-          <button
-            type="button"
-            onClick={() => setLang("en")}
-            className={`px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
-              lang === "en" ? "bg-[#F47A1F] text-[#FFFAF4]" : "text-[#5B6577]"
-            }`}
-          >
-            EN
-          </button>
-          <button
-            type="button"
-            onClick={() => setLang("hi")}
-            className={`px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
-              lang === "hi" ? "bg-[#F47A1F] text-[#FFFAF4]" : "text-[#5B6577]"
-            }`}
-          >
-            हिन्दी
-          </button>
+        {/* Audio Listen Button & EN / HI toggle */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <AudioListenButton textToSpeak={planSpeechText} lang={lang} />
+          <div className="flex items-center bg-[#FBEBD9] rounded-full p-0.5 text-[11px] font-bold">
+            <button
+              type="button"
+              onClick={() => setLang("en")}
+              className={`px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
+                lang === "en" ? "bg-[#F47A1F] text-[#FFFAF4]" : "text-[#5B6577]"
+              }`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang("hi")}
+              className={`px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
+                lang === "hi" ? "bg-[#F47A1F] text-[#FFFAF4]" : "text-[#5B6577]"
+              }`}
+            >
+              हिन्दी
+            </button>
+          </div>
         </div>
       </div>
 
@@ -250,9 +288,16 @@ export default function SafetyPlanCard() {
             <span className="text-xs font-extrabold text-[#D92D20]">
               {t.planCard.currentHeatLevel}
             </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#D92D20] text-[#FFFAF4]">
-              {effectiveRiskLevel}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#D92D20] text-[#FFFAF4]">
+                {effectiveRiskLevel}
+              </span>
+              {isVulnerable && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#D92D20]/15 text-[#D92D20] border border-[#D92D20]/30">
+                  +1 Stricter
+                </span>
+              )}
+            </div>
           </div>
           <p className="text-xs font-semibold text-[#1E2A44] leading-tight">
             {lang === "hi"
@@ -263,9 +308,16 @@ export default function SafetyPlanCard() {
 
         {/* Section 2: Green Tint Best Time to Go Out */}
         <div className="bg-[#EAF6EE] border border-[#2E9E5B]/25 rounded-xl p-3 flex flex-col gap-1.5">
-          <span className="text-xs font-extrabold text-[#2E9E5B]">
-            {t.planCard.bestTimeToLeave}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-[#2E9E5B]">
+              {t.planCard.bestTimeToLeave}
+            </span>
+            {isVulnerable && (
+              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-[#2E9E5B]/20 text-[#2E9E5B]">
+                {lang === "hi" ? "सख्त समय सीमा" : "Vulnerable Window"}
+              </span>
+            )}
+          </div>
           <div className="text-xs font-bold text-[#1E2A44]">
             {saferRanges.length > 0 ? saferRanges.join(", ") : "Early morning before 8 AM & after 6 PM"}
           </div>
@@ -293,7 +345,7 @@ export default function SafetyPlanCard() {
           {/* Row of small glass icons by hour (filling one after another on load) */}
           <div className="flex items-center justify-between gap-1 pt-1">
             {Array.from({ length: totalGlasses }).map((_, idx) => {
-              const isFilled = idx < glassesFilled;
+              const isFilled = idx < displayGlasses;
               return (
                 <div
                   key={idx}

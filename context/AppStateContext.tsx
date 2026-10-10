@@ -57,7 +57,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [age, setAge] = useState<string>("31 to 45");
   const [occupation, setOccupation] = useState<string>("Delivery Driver");
   const [sunHours, setSunHours] = useState<ExposureBucket>("2 to 6 hours");
-  const [healthHistory, setHealthHistory] = useState<string[]>(["migraine"]);
+  const [healthHistory, setHealthHistory] = useState<string[]>([]);
   const [customHealthNote, setCustomHealthNote] = useState<string>("");
   const [rememberDevice, setRememberDevice] = useState<boolean>(false);
   const [selectedHour, setSelectedHour] = useState<number>(14);
@@ -66,24 +66,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // Load from localStorage only if rememberDevice was previously turned on AND not under 18
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.rememberDevice && parsed.age !== "Under 18") {
-          if (parsed.city) setCity(parsed.city);
-          if (parsed.customCity) setCustomCity(parsed.customCity);
-          if (parsed.age) setAge(parsed.age);
-          if (parsed.occupation) setOccupation(parsed.occupation);
-          if (parsed.sunHours) setSunHours(parsed.sunHours);
-          if (Array.isArray(parsed.healthHistory)) setHealthHistory(parsed.healthHistory);
-          if (parsed.customHealthNote) setCustomHealthNote(parsed.customHealthNote);
-          setRememberDevice(true);
+    const timer = setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.rememberDevice && parsed.age !== "Under 18") {
+            if (parsed.city) setCity(parsed.city);
+            if (parsed.customCity) setCustomCity(parsed.customCity);
+            if (parsed.age) setAge(parsed.age);
+            if (parsed.occupation) setOccupation(parsed.occupation);
+            if (parsed.sunHours) setSunHours(parsed.sunHours);
+            if (Array.isArray(parsed.healthHistory)) setHealthHistory(parsed.healthHistory);
+            if (parsed.customHealthNote) setCustomHealthNote(parsed.customHealthNote);
+            setRememberDevice(true);
+          }
         }
+      } catch {
+        // Ignore localStorage errors
       }
-    } catch {
-      // Ignore localStorage errors
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Sync to localStorage only if rememberDevice is true and age is NOT Under 18

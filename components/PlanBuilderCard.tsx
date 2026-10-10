@@ -9,10 +9,9 @@ import {
   Clock01Icon,
   FirstAidKitIcon,
   ArrowRight01Icon,
-  Tick02Icon,
-  Sun01Icon
+  Tick02Icon
 } from "@hugeicons/core-free-icons";
-import GlideSelect, { GlideSelectOption } from "@/components/GlideSelect";
+import GlideSelect from "@/components/GlideSelect";
 import { useAppState } from "@/context/AppStateContext";
 import {
   CITIES_CONFIG,
@@ -66,7 +65,6 @@ export default function PlanBuilderCard() {
   // Debounced search for city using Open-Meteo geocoding
   useEffect(() => {
     if (!isOtherCity || citySearchQuery.trim().length < 2) {
-      setCitySuggestions([]);
       return;
     }
 
@@ -183,7 +181,10 @@ export default function PlanBuilderCard() {
               value={city}
               onChange={(val: string) => {
                 setCity(val);
-                if (val !== "OTHER_SEARCH") setCustomCity("");
+                if (val !== "OTHER_SEARCH") {
+                  setCustomCity("");
+                  setCitySuggestions([]);
+                }
               }}
               onOpenChange={handleOpenChange}
               placeholder={t.planBuilder.cityLabel}
@@ -205,8 +206,12 @@ export default function PlanBuilderCard() {
                   type="text"
                   value={citySearchQuery || customCity}
                   onChange={e => {
-                    setCitySearchQuery(e.target.value);
-                    setCustomCity(e.target.value);
+                    const val = e.target.value;
+                    setCitySearchQuery(val);
+                    setCustomCity(val);
+                    if (val.trim().length < 2) {
+                      setCitySuggestions([]);
+                    }
                   }}
                   placeholder={t.planBuilder.searchCityPlaceholder}
                   className="w-full px-3.5 py-2.5 text-xs font-medium text-[#1E2A44] bg-[#FBEBD9]/80 border border-[#1E2A44]/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F47A1F]"

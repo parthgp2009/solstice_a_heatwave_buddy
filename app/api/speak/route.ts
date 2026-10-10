@@ -90,12 +90,13 @@ export async function POST(req: NextRequest) {
         "Cache-Control": "public, max-age=3600"
       }
     });
-  } catch (error: any) {
-    console.error("Polly speech synthesis error:", error?.message || error);
+  } catch (error: unknown) {
+    const err = error as { message?: string } | undefined;
+    console.error("Polly speech synthesis error:", err?.message || error);
     return NextResponse.json(
       {
         error: "POLLY_ERROR",
-        message: error?.message || "Failed to synthesize speech with Amazon Polly."
+        message: err?.message || "Failed to synthesize speech with Amazon Polly."
       },
       { status: 500 }
     );

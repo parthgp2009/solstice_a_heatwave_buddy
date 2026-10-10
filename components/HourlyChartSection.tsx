@@ -4,16 +4,34 @@ import React, { useState } from "react";
 import { useAppState } from "@/context/AppStateContext";
 import {
   adjustedFeelsLikeForHour,
-  RiskLevel
+  computeSafeWindows,
+  isVulnerableUser,
+  DEFAULT_HOURLY_APPARENT_TEMP,
+  DEFAULT_HOURLY_UV_INDEX
 } from "@/lib/heatModel";
 
 export default function HourlyChartSection() {
-  const { city, sunHours, selectedHour, setSelectedHour, lang } = useAppState();
+  const { city, sunHours, selectedHour, setSelectedHour, lang, age, healthHistory } = useAppState();
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
+
+  const isVulnerable = isVulnerableUser(age, healthHistory);
+
+  const { saferRanges, avoidRanges } = computeSafeWindows(
+    DEFAULT_HOURLY_APPARENT_TEMP,
+    DEFAULT_HOURLY_UV_INDEX,
+    sunHours,
+    isVulnerable
+  );
 
   // Compute 24 hours of adjusted feels-like temperatures
   const hourlyData = Array.from({ length: 24 }, (_, h) => {
-    const reading = adjustedFeelsLikeForHour(h, undefined, undefined, sunHours);
+    const reading = adjustedFeelsLikeForHour(
+      h,
+      DEFAULT_HOURLY_APPARENT_TEMP,
+      DEFAULT_HOURLY_UV_INDEX,
+      sunHours,
+      isVulnerable
+    );
     return {
       hour: h,
       temp: reading.adjusted,
@@ -46,6 +64,25 @@ export default function HourlyChartSection() {
   const points = hourlyData.map(d => `${getX(d.hour)},${getY(d.temp)}`);
   const linePath = `M ${points.join(" L ")}`;
   const areaPath = `M ${getX(0)},${paddingTop + chartHeight} L ${points.join(" L ")} L ${getX(23)},${paddingTop + chartHeight} Z`;
+
+  // Compute contiguous safe and avoid hour segments for dynamic SVG shading
+  const segments: { start: number; end: number; isSafe: boolean }[] = [];
+  let currentSegment: { start: number; end: number; isSafe: boolean } | null = null;
+
+  for (let h = 0; h < 24; h++) {
+    const isSafe = hourlyData[h].risk === "Low" || hourlyData[h].risk === "Caution";
+    if (!currentSegment) {
+      currentSegment = { start: h, end: h, isSafe };
+    } else if (currentSegment.isSafe === isSafe) {
+      currentSegment.end = h;
+    } else {
+      segments.push(currentSegment);
+      currentSegment = { start: h, end: h, isSafe };
+    }
+  }
+  if (currentSegment) {
+    segments.push(currentSegment);
+  }
 
   // Selected or hovered hour details
   const activeHourIndex = hoveredHour !== null ? hoveredHour : selectedHour;
@@ -120,22 +157,51 @@ export default function HourlyChartSection() {
               <stop offset="100%" stopColor="#2E9E5B" stopOpacity="0.05" />
             </linearGradient>
 
-            {/* Danger Zone Shading (12:00 - 16:30) */}
+            {/* Danger Zone Shading */}
             <pattern id="diagonalHatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
               <line x1="0" y1="0" x2="0" y2="10" stroke="#D92D20" strokeWidth="1" strokeOpacity="0.15" />
             </pattern>
           </defs>
 
-          {/* Shaded Danger Peak Zone (12:00 to 16:30) */}
-          <rect
-            x={getX(12)}
-            y={paddingTop}
-            width={getX(16.5) - getX(12)}
-            height={chartHeight}
-            fill="#FDECEA"
-            opacity="0.8"
-            rx="6"
-          />
+          {/* Dynamically Shaded Safe / Avoid Bands */}
+          {segments.map((seg, idx) => {
+            const xStart = getX(seg.start);
+            const xEnd = seg.end === 23 ? getX(23) : getX(seg.end);
+            const w = Math.max(10, xEnd - xStart);
+            const midX = (xStart + xEnd) / 2;
+
+            return (
+              <g key={idx}>
+                <rect
+                  x={xStart}
+                  y={paddingTop}
+                  width={w}
+                  height={chartHeight}
+                  fill={seg.isSafe ? "#EAF6EE" : "#FDECEA"}
+                  opacity={0.88}
+                  rx="6"
+                />
+                {w > 45 && (
+                  <text
+                    x={midX}
+                    y={paddingTop + 14}
+                    textAnchor="middle"
+                    className={`text-[9px] font-extrabold uppercase tracking-wider ${
+                      seg.isSafe ? "fill-[#2E9E5B]" : "fill-[#D92D20]"
+                    }`}
+                  >
+                    {seg.isSafe
+                      ? lang === "hi"
+                        ? "सुरक्षित समय"
+                        : "Safe Window"
+                      : lang === "hi"
+                      ? "धूप से बचें"
+                      : "Avoid Sun"}
+                  </text>
+                )}
+              </g>
+            );
+          })}
 
           {/* Horizontal Grid lines and temperature labels */}
           {[25, 32, 38, 44].map(t => {
@@ -261,10 +327,19 @@ export default function HourlyChartSection() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-lg bg-[#FDECEA] text-[#D92D20] font-black text-[11px]">
-            {lang === "hi" ? "लाल क्षेत्र: 12:00 - 16:30 धूप से बचें" : "Red Zone: 12:00 - 16:30 Avoid Sun"}
-          </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {saferRanges.length > 0 && (
+            <span className="px-2.5 py-1 rounded-lg bg-[#EAF6EE] text-[#2E9E5B] font-extrabold text-[11px] border border-[#2E9E5B]/20">
+              {lang === "hi" ? "हरा क्षेत्र: " : "Safe Hours: "}
+              {saferRanges.join(", ")}
+            </span>
+          )}
+          {avoidRanges.length > 0 && (
+            <span className="px-2.5 py-1 rounded-lg bg-[#FDECEA] text-[#D92D20] font-extrabold text-[11px] border border-[#D92D20]/20">
+              {lang === "hi" ? "लाल क्षेत्र: " : "Red Zone: "}
+              {avoidRanges.join(", ")}
+            </span>
+          )}
         </div>
       </div>
     </div>

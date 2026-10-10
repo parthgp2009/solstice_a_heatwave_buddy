@@ -21,13 +21,6 @@ export default function AudioListenButton({
   const [source, setSource] = useState<"polly" | "browser" | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Clean up audio / speech on unmount
-  useEffect(() => {
-    return () => {
-      stopPlayback();
-    };
-  }, []);
-
   const stopPlayback = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -40,6 +33,13 @@ export default function AudioListenButton({
     setStatus("idle");
     setSource(null);
   };
+
+  // Clean up audio / speech on unmount
+  useEffect(() => {
+    return () => {
+      stopPlayback();
+    };
+  }, []);
 
   const handleListen = async () => {
     if (status === "playing") {

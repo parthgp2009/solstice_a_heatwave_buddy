@@ -8,7 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Call02Icon } from "@hugeicons/core-free-icons";
 
 export default function Footer() {
-  const { lang, setActiveModal } = useAppState();
+  const { lang } = useAppState();
 
   return (
     <footer className="w-full bg-[#1E2A44] text-[#FFFAF4] mt-16 pt-12 pb-24 border-t-4 border-[#F47A1F]">
@@ -116,7 +116,7 @@ export default function Footer() {
         {/* Bottom Copyright Strip */}
         <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#FFFAF4]/60 font-semibold">
           <span>
-            © {new Date().getFullYear()} Solstice Heatwave Buddy (लू साथी). All rights reserved.
+            © 2026 Solstice Heatwave Buddy (लू साथी). All rights reserved.
           </span>
           <span>
             {lang === "hi"

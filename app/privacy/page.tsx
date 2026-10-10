@@ -2,8 +2,7 @@
 
 import React from "react";
 import TopBar from "@/components/TopBar";
-import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
-import { AppStateProvider, useAppState } from "@/context/AppStateContext";
+import { useAppState } from "@/context/AppStateContext";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Shield01Icon, LockKeyIcon, UserIcon } from "@hugeicons/core-free-icons";
 
@@ -88,16 +87,11 @@ function PrivacyContent() {
           </div>
         </div>
       </main>
-
-      <BottomDisclaimerStrip />
     </div>
   );
 }
 
 export default function PrivacyPage() {
-  return (
-    <AppStateProvider>
-      <PrivacyContent />
-    </AppStateProvider>
-  );
+  return <PrivacyContent />;
 }
+

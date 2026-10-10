@@ -7,14 +7,20 @@ import HeroBackground from "@/components/HeroBackground";
 import LiveReadingCard from "@/components/LiveReadingCard";
 import FeatureRow from "@/components/FeatureRow";
 import TaglineCard from "@/components/TaglineCard";
+import HourlyChartSection from "@/components/HourlyChartSection";
+import PlanBuilderCard from "@/components/PlanBuilderCard";
+import SafetyPlanCard from "@/components/SafetyPlanCard";
+import HydrationTracker from "@/components/HydrationTracker";
+import HowItWorksSection from "@/components/HowItWorksSection";
+import FaqAccordionSection from "@/components/FaqAccordionSection";
+import Footer from "@/components/Footer";
 import { useAppState } from "@/context/AppStateContext";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowRight01Icon,
   Shield01Icon,
   Sun01Icon,
-  Alert02Icon,
-  HelpCircleIcon
+  Alert02Icon
 } from "@hugeicons/core-free-icons";
 
 export default function HomePage() {
@@ -103,6 +109,54 @@ export default function HomePage() {
         <div className="w-full">
           <TaglineCard />
         </div>
+
+        {/* 24-Hour Adjusted Feels-Like Timeline Chart */}
+        <section id="hourly-chart" className="w-full">
+          <HourlyChartSection />
+        </section>
+
+        {/* Full Interactive Safety Plan Section */}
+        <section id="safety-plan-section" className="flex flex-col gap-6 pt-4 border-t border-[#1E2A44]/10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#F47A1F]">
+                {lang === "hi" ? "दैनिक सुरक्षा योजना" : "Interactive Safety Plan"}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1E2A44] tracking-tight">
+                {lang === "hi" ? "अपनी व्यक्तिगत हीट सुरक्षा योजना तैयार करें" : "Build & Listen to Your Personal Heat Plan"}
+              </h2>
+            </div>
+            <p className="text-xs text-[#5B6577] max-w-md">
+              {lang === "hi"
+                ? "आयु, कार्य और धूप में रहने का समय चुनें। एआई आवाज (काजल) से अपनी पूरी योजना सुनें।"
+                : "Customize your profile and listen to your tailored precautions with bilingual Kajal AI voice."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 min-[900px]:grid-cols-12 gap-8 lg:gap-10 items-start">
+            <div className="min-[900px]:col-span-6 flex flex-col gap-6">
+              <PlanBuilderCard />
+            </div>
+            <div className="min-[900px]:col-span-6 flex flex-col gap-6">
+              <SafetyPlanCard />
+            </div>
+          </div>
+
+          {/* Hydration Tracker */}
+          <div className="w-full mt-2">
+            <HydrationTracker />
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section id="how-it-works" className="w-full pt-4 border-t border-[#1E2A44]/10">
+          <HowItWorksSection />
+        </section>
+
+        {/* FAQs Section */}
+        <section id="faqs" className="w-full pt-4 border-t border-[#1E2A44]/10">
+          <FaqAccordionSection />
+        </section>
 
         {/* Multi-Page Portal Cards Grid */}
         <div className="flex flex-col gap-4 pt-4 border-t border-[#1E2A44]/10">
@@ -214,6 +268,9 @@ export default function HomePage() {
           <Link href="/terms" className="hover:text-[#F47A1F] transition-colors">Terms of Service</Link>
         </div>
       </main>
+
+      {/* Full Page Footer with Emergency SOS & Navigation */}
+      <Footer />
     </div>
   );
 }

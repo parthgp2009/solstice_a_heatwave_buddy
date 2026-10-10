@@ -6,12 +6,9 @@ import PlanBuilderCard from "@/components/PlanBuilderCard";
 import LiveReadingCard from "@/components/LiveReadingCard";
 import SafetyPlanCard from "@/components/SafetyPlanCard";
 import FeatureRow from "@/components/FeatureRow";
-import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
-import InfoModals from "@/components/InfoModals";
-import DevHeatModelPanel from "@/components/DevHeatModelPanel";
-import { AppStateProvider, useAppState } from "@/context/AppStateContext";
+import { useAppState } from "@/context/AppStateContext";
 
-function PlanContent() {
+export default function SafetyPlanPage() {
   const { lang } = useAppState();
 
   return (
@@ -50,18 +47,6 @@ function PlanContent() {
           <FeatureRow />
         </div>
       </main>
-
-      <BottomDisclaimerStrip />
-      <InfoModals />
-      <DevHeatModelPanel />
     </div>
-  );
-}
-
-export default function SafetyPlanPage() {
-  return (
-    <AppStateProvider>
-      <PlanContent />
-    </AppStateProvider>
   );
 }

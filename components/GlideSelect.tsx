@@ -228,6 +228,7 @@ export default function GlideSelect({
   }, [phase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (disabled && phase !== 'closed') close('instant');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disabled]);

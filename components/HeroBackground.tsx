@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 
 interface HeroBackgroundProps {
@@ -12,12 +12,31 @@ const SUN_POS = { xPercent: 96.9, yPercent: 45.0 };
 const SKYLINE_Y = 47.9; // percent
 const MIST_Y = 52.0;    // percent
 
+const subscribeReducedMotion = (callback: () => void) => {
+  const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+};
+const getReducedMotionSnapshot = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const getReducedMotionServerSnapshot = () => false;
+
+const subscribeSmallScreen = (callback: () => void) => {
+  window.addEventListener("resize", callback, { passive: true });
+  return () => window.removeEventListener("resize", callback);
+};
+const getSmallScreenSnapshot = () => window.innerWidth < 768;
+const getSmallScreenServerSnapshot = () => false;
+
 export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackgroundProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const photoLayerRef = useRef<HTMLDivElement>(null);
+  const sunGlowRef = useRef<HTMLDivElement>(null);
+  const hazeLayerRef = useRef<HTMLDivElement>(null);
+
   const [photoError, setPhotoError] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, getReducedMotionServerSnapshot);
+  const isSmallScreen = useSyncExternalStore(subscribeSmallScreen, getSmallScreenSnapshot, getSmallScreenServerSnapshot);
 
   // Parallax offsets
   const mousePos = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
@@ -28,20 +47,13 @@ export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackg
   const shimmerScale = Math.max(0, Math.min(6, (adjustedFeelsLikeTemp - 25) * 0.3));
 
   useEffect(() => {
-    // Check reduced motion
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(motionQuery.matches);
-    const motionListener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    motionQuery.addEventListener("change", motionListener);
-
-    // Screen size
-    const checkScreen = () => setIsSmallScreen(window.innerWidth < 768);
-    checkScreen();
-    window.addEventListener("resize", checkScreen, { passive: true });
-
     // Scroll listener
     const onScroll = () => {
       scrollYRef.current = window.scrollY;
+      if (sunGlowRef.current) {
+        const glowOpacity = Math.max(0, 1 - window.scrollY * 0.003);
+        sunGlowRef.current.style.opacity = `${glowOpacity}`;
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -67,8 +79,6 @@ export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackg
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      motionQuery.removeEventListener("change", motionListener);
-      window.removeEventListener("resize", checkScreen);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("visibilitychange", onVisibilityChange);
@@ -122,6 +132,18 @@ export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackg
       mousePos.current.x += (mousePos.current.targetX - mousePos.current.x) * 0.08;
       mousePos.current.y += (mousePos.current.targetY - mousePos.current.y) * 0.08;
 
+      if (!reducedMotion) {
+        if (photoLayerRef.current) {
+          const px = mousePos.current.x * 12;
+          const py = mousePos.current.y * 8 + scrollYRef.current * 0.15;
+          photoLayerRef.current.style.transform = `translate3d(${px}px, ${-py}px, 0)`;
+        }
+        if (hazeLayerRef.current) {
+          const hx = mousePos.current.x * 20;
+          hazeLayerRef.current.style.transform = `translate3d(${hx}px, 0, 0)`;
+        }
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const mouseCanvasX = ((mousePos.current.x + 1) / 2) * canvas.width;
@@ -169,14 +191,6 @@ export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackg
     };
   }, [reducedMotion, isSmallScreen]);
 
-  // Pointer & Scroll parallax transforms
-  const photoParallaxX = reducedMotion ? 0 : mousePos.current.x * 12;
-  const photoParallaxY = reducedMotion ? 0 : mousePos.current.y * 8 + scrollYRef.current * 0.15;
-  const hazeParallaxX = reducedMotion ? 0 : mousePos.current.x * 20;
-
-  // Fade out sun glow as user scrolls down
-  const sunGlowScrollOpacity = Math.max(0, 1 - scrollYRef.current * 0.003);
-
   return (
     <div
       ref={containerRef}
@@ -216,9 +230,9 @@ export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackg
 
       {/* Layer 1: Hero Photo with gradient mask on left */}
       <div
+        ref={photoLayerRef}
         className="absolute inset-0 w-full h-full"
         style={{
-          transform: `translate3d(${photoParallaxX}px, ${-photoParallaxY}px, 0)`,
           transition: reducedMotion ? "none" : "transform 0.15s ease-out"
         }}
       >
@@ -250,12 +264,12 @@ export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackg
 
       {/* Layer 2: Sun Glow positioned over the sun in the photo (mix-blend-mode: screen) */}
       <div
+        ref={sunGlowRef}
         className="absolute pointer-events-none"
         style={{
           left: `${SUN_POS.xPercent}%`,
           top: `${SUN_POS.yPercent}%`,
-          transform: "translate(-50%, -50%)",
-          opacity: sunGlowScrollOpacity
+          transform: "translate(-50%, -50%)"
         }}
       >
         <div
@@ -273,9 +287,9 @@ export default function HeroBackground({ adjustedFeelsLikeTemp = 40 }: HeroBackg
       {/* Layer 3: Drifting Haze & Wisps (3 translucent layers, cream and peach, 20-35% opacity) */}
       {!reducedMotion && (
         <div
+          ref={hazeLayerRef}
           className="absolute inset-0 pointer-events-none overflow-hidden"
           style={{
-            transform: `translate3d(${hazeParallaxX}px, 0, 0)`,
             transition: "transform 0.2s ease-out"
           }}
         >

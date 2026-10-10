@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import TopBar from "@/components/TopBar";
-import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
-import { AppStateProvider, useAppState } from "@/context/AppStateContext";
+import { useAppState } from "@/context/AppStateContext";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 
@@ -113,16 +112,11 @@ function FaqsContent() {
           })}
         </div>
       </main>
-
-      <BottomDisclaimerStrip />
     </div>
   );
 }
 
 export default function FaqsPage() {
-  return (
-    <AppStateProvider>
-      <FaqsContent />
-    </AppStateProvider>
-  );
+  return <FaqsContent />;
 }
+

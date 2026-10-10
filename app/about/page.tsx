@@ -4,8 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
-import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
-import { AppStateProvider, useAppState } from "@/context/AppStateContext";
+import { useAppState } from "@/context/AppStateContext";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Shield01Icon,
@@ -16,7 +15,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 function AboutContent() {
-  const { lang, t } = useAppState();
+  const { lang } = useAppState();
 
   return (
     <div className="relative min-h-screen flex flex-col justify-between selection:bg-[#F47A1F] selection:text-[#FFFAF4] pb-24 bg-[#FDF3E7]">
@@ -146,16 +145,12 @@ function AboutContent() {
           </div>
         </div>
       </main>
-
-      <BottomDisclaimerStrip />
     </div>
   );
 }
 
 export default function AboutPage() {
-  return (
-    <AppStateProvider>
-      <AboutContent />
-    </AppStateProvider>
-  );
+  return <AboutContent />;
 }
+
+

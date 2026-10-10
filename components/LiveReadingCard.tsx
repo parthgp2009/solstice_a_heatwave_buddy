@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Sun01Icon,
@@ -11,42 +11,60 @@ import {
 import { useAppState } from "@/context/AppStateContext";
 import {
   adjustedFeelsLikeForHour,
-  RiskLevel
+  RiskLevel,
+  isVulnerableUser,
+  DEFAULT_HOURLY_APPARENT_TEMP,
+  DEFAULT_HOURLY_UV_INDEX
 } from "@/lib/heatModel";
 
+const subscribeReducedMotion = (callback: () => void) => {
+  const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+};
+const getReducedMotionSnapshot = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const getReducedMotionServerSnapshot = () => false;
+
 export default function LiveReadingCard() {
-  const { city, customCity, sunHours, selectedHour, setSelectedHour, t, lang } = useAppState();
+  const {
+    city,
+    customCity,
+    sunHours,
+    selectedHour,
+    setSelectedHour,
+    t,
+    age,
+    healthHistory
+  } = useAppState();
 
   const [expandedHow, setExpandedHow] = useState(false);
   const [animatedTemp, setAnimatedTemp] = useState<number>(25);
   const [needleAngle, setNeedleAngle] = useState<number>(-180);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, getReducedMotionServerSnapshot);
 
   const displayCity = customCity || (city === "OTHER_SEARCH" ? "Delhi" : city);
 
-  // Compute live readings for current selectedHour
-  const reading = adjustedFeelsLikeForHour(selectedHour, undefined, undefined, sunHours);
-  const targetAdjusted = reading.adjusted;
+  const isVulnerable = isVulnerableUser(age, healthHistory);
 
-  useEffect(() => {
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(motionQuery.matches);
-  }, []);
+  // Compute live readings for current selectedHour
+  const reading = adjustedFeelsLikeForHour(
+    selectedHour,
+    DEFAULT_HOURLY_APPARENT_TEMP,
+    DEFAULT_HOURLY_UV_INDEX,
+    sunHours,
+    isVulnerable
+  );
+  const targetAdjusted = reading.adjusted;
 
   // On-load count up and needle sweep
   useEffect(() => {
-    if (reducedMotion) {
-      setAnimatedTemp(targetAdjusted);
-      // Map adjusted temp 25C -> 50C to -180deg -> 0deg
-      const progress = Math.max(0, Math.min(1, (targetAdjusted - 25) / 25));
-      setNeedleAngle(-180 + progress * 180);
-      return;
-    }
+    if (reducedMotion) return;
 
-    let start = 25;
+    const start = 25;
     const end = targetAdjusted;
     const duration = 1000;
     const startTime = performance.now();
+    let animId: number;
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
@@ -60,12 +78,17 @@ export default function LiveReadingCard() {
       setNeedleAngle(-180 + needleProg * 180);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animId = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
+    animId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animId);
   }, [targetAdjusted, reducedMotion]);
+
+  const displayTemp = reducedMotion ? targetAdjusted : animatedTemp;
+  const staticNeedleProg = Math.max(0, Math.min(1, (targetAdjusted - 25) / 25));
+  const displayNeedleAngle = reducedMotion ? -180 + staticNeedleProg * 180 : needleAngle;
 
   // Risk styling
   const getRiskBadge = (level: RiskLevel) => {
@@ -118,7 +141,7 @@ export default function LiveReadingCard() {
         <div className="flex flex-col">
           <div className="flex items-baseline gap-2">
             <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#1E2A44] leading-none">
-              {animatedTemp.toFixed(1)}°C
+              {displayTemp.toFixed(1)}°C
             </span>
             {/* UV Chip */}
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-[#FBEBD9] text-[#1E2A44] border border-[#1E2A44]/10">
@@ -134,6 +157,11 @@ export default function LiveReadingCard() {
           <div className="text-[11px] font-medium text-[#1E2A44] mt-1 bg-[#FBEBD9]/60 px-2 py-1 rounded-md">
             {t.liveCard.breakdownPrefix} {reading.rawFeelsLike}°C, UV +{reading.uvOff}, Sun +{reading.expOff} ={" "}
             <span className="font-bold">{reading.adjusted}°C adjusted</span>
+            {isVulnerable && (
+              <span className="text-[#D92D20] font-bold ml-1">
+                · Vulnerable tier (+1)
+              </span>
+            )}
           </div>
         </div>
 
@@ -176,7 +204,7 @@ export default function LiveReadingCard() {
               <g
                 style={{
                   transformOrigin: "50px 50px",
-                  transform: `rotate(${needleAngle + 90}deg)`,
+                  transform: `rotate(${displayNeedleAngle + 90}deg)`,
                   transition: reducedMotion ? "none" : "transform 0.15s ease-out"
                 }}
               >
@@ -191,6 +219,11 @@ export default function LiveReadingCard() {
           >
             <HugeiconsIcon icon={Alert02Icon} size={12} strokeWidth={2.4} />
             <span>{reading.riskLevel}</span>
+            {isVulnerable && (
+              <span className="text-[10px] opacity-85 font-black ml-0.5 text-[#D92D20]">
+                (+1 Strict)
+              </span>
+            )}
           </div>
         </div>
       </div>

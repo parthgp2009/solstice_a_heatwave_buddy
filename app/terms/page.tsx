@@ -2,8 +2,7 @@
 
 import React from "react";
 import TopBar from "@/components/TopBar";
-import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
-import { AppStateProvider, useAppState } from "@/context/AppStateContext";
+import { useAppState } from "@/context/AppStateContext";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Call02Icon, Alert02Icon } from "@hugeicons/core-free-icons";
 
@@ -73,16 +72,11 @@ function TermsContent() {
           </div>
         </div>
       </main>
-
-      <BottomDisclaimerStrip />
     </div>
   );
 }
 
 export default function TermsPage() {
-  return (
-    <AppStateProvider>
-      <TermsContent />
-    </AppStateProvider>
-  );
+  return <TermsContent />;
 }
+

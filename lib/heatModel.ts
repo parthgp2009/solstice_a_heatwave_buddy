@@ -3,7 +3,8 @@
  * All thresholds are configured as named constants at the top.
  */
 
-// Risk Level Thresholds (Adjusted Feels-Like in °C)
+// PLACEHOLDER REVIEW NOTE:
+// These risk thresholds (in °C) are preliminary biomedical placeholders to be reviewed against clinical guidelines.
 export const RISK_THRESHOLD_LOW = 32;       // below 32 => Low
 export const RISK_THRESHOLD_CAUTION = 38;   // 32 to below 38 => Caution
 export const RISK_THRESHOLD_DANGER = 46;    // 38 to below 46 => Danger
@@ -22,7 +23,7 @@ export const EXPOSURE_OFFSETS: Record<ExposureBucket, number> = {
   'More than 6 hours': 2,
 };
 
-// Default Hourly Profile (Open-Meteo matching shape)
+// Default Hourly Profile (Open-Meteo matching shape - 24 fake values)
 export const DEFAULT_HOURLY_APPARENT_TEMP: number[] = [
   28, 27, 27, 26, 26, 28, 30, 32, 34, 37, 39, 41,
   43, 45, 45, 44, 43, 41, 38, 35, 33, 31, 30, 29
@@ -39,9 +40,9 @@ export type UvLabel = 'Low' | 'Moderate' | 'High' | 'Very high' | 'Extreme';
 
 /**
  * Calculates UV offset based on UV index.
- * uv < 6 => 0
- * uv >= 6 and <= 10 => 1
- * uv > 10 => 1.5
+ * UV below 6 -> 0
+ * 6 to 10 -> 1
+ * above 10 -> 1.5
  */
 export function uvOffset(uv: number): number {
   if (uv < UV_OFFSET_MODERATE_LIMIT) return 0;
@@ -51,15 +52,21 @@ export function uvOffset(uv: number): number {
 
 /**
  * Calculates exposure offset based on daily sun hours bucket.
+ * up to 2h -> 0
+ * 2 to 6h -> 1
+ * more than 6h -> 2
  */
 export function exposureOffset(bucket: ExposureBucket | string): number {
-  if (bucket === 'More than 6 hours') return 2;
-  if (bucket === '2 to 6 hours') return 1;
-  return 0; // 'Up to 2 hours' or default
+  if (!bucket) return 0;
+  const str = String(bucket).toLowerCase();
+  if (str.includes('more than 6') || str.includes('> 6') || str.includes('>6') || str.includes('more than 6h')) return 2;
+  if (str.includes('2 to 6') || str.includes('2-6') || str.includes('2 to 6h')) return 1;
+  return 0; // 'up to 2h', 'up to 2 hours', etc.
 }
 
 /**
  * Computes adjusted feels-like temperature.
+ * adjustedFeelsLike = apparent_temperature + uvOffset + exposureOffset
  */
 export function adjustedFeelsLike(
   apparentTemp: number,
@@ -72,61 +79,104 @@ export function adjustedFeelsLike(
 }
 
 /**
- * Computes adjusted feels-like for a specific hour (0-23) from hourly arrays.
+ * Checks if a user profile is considered vulnerable.
+ * Under 18, Over 60, or a history of heatstroke or heat exhaustion.
+ * Flexible and case-insensitive.
  */
-export function adjustedFeelsLikeForHour(
-  hour: number,
-  apparentTemps: number[] = DEFAULT_HOURLY_APPARENT_TEMP,
-  uvIndices: number[] = DEFAULT_HOURLY_UV_INDEX,
-  bucket: ExposureBucket | string = '2 to 6 hours'
-): {
-  hour: number;
-  rawFeelsLike: number;
-  uv: number;
-  uvOff: number;
-  expOff: number;
-  adjusted: number;
-  riskLevel: RiskLevel;
-  uvLabel: UvLabel;
-} {
-  const h = Math.max(0, Math.min(23, hour));
-  const rawFeelsLike = apparentTemps[h] ?? 38;
-  const uv = uvIndices[h] ?? 5;
-  const uvOff = uvOffset(uv);
-  const expOff = exposureOffset(bucket);
-  const adjusted = rawFeelsLike + uvOff + expOff;
-  const riskLevel = getRiskLevel(adjusted);
-  const uvLabel = getUvLabel(uv);
+export function isVulnerableUser(
+  age?: string | null,
+  healthHistory?: string[] | string | null
+): boolean {
+  if (!age && !healthHistory) return false;
 
-  return {
-    hour: h,
-    rawFeelsLike,
-    uv,
-    uvOff,
-    expOff,
-    adjusted,
-    riskLevel,
-    uvLabel
-  };
+  const normalizedAge = String(age || '').trim().toLowerCase();
+  const isVulnerableAge =
+    normalizedAge.includes('under 18') ||
+    normalizedAge.includes('< 18') ||
+    normalizedAge.includes('over 60') ||
+    normalizedAge.includes('> 60') ||
+    normalizedAge.includes('46 to 60');
+
+  // If age field itself contains a heat condition keyword (e.g. "Heatstroke" passed as first param)
+  const isHeatInAgeParam =
+    normalizedAge.includes('heatstroke') ||
+    normalizedAge.includes('exhaustion') ||
+    normalizedAge.includes('migraine') ||
+    normalizedAge.includes('fatigue') ||
+    normalizedAge.includes('skin');
+
+  let hasHeatHistory = false;
+  if (Array.isArray(healthHistory)) {
+    hasHeatHistory = healthHistory.some(item => {
+      const s = String(item).trim().toLowerCase();
+      return s !== '' && s !== 'none' && s !== 'no';
+    });
+  } else if (typeof healthHistory === 'string') {
+    const s = healthHistory.trim().toLowerCase();
+    hasHeatHistory = s !== '' && s !== 'none' && s !== 'no' && s !== 'false';
+  }
+
+  return Boolean(isVulnerableAge || isHeatInAgeParam || hasHeatHistory);
 }
 
 /**
- * Determines Risk Level from adjusted temperature.
+ * Moves risk one step stricter (Low -> Caution -> Danger -> Extreme, never above Extreme).
  */
-export function getRiskLevel(adjustedTemp: number): RiskLevel {
-  if (adjustedTemp < RISK_THRESHOLD_LOW) return 'Low';
-  if (adjustedTemp < RISK_THRESHOLD_CAUTION) return 'Caution';
-  if (adjustedTemp < RISK_THRESHOLD_DANGER) return 'Danger';
-  return 'Extreme';
+export function getStricterRiskLevel(level: RiskLevel, applyStrictness: boolean = true): RiskLevel {
+  if (!applyStrictness) return level;
+  switch (level) {
+    case 'Low':
+      return 'Caution';
+    case 'Caution':
+      return 'Danger';
+    case 'Danger':
+      return 'Extreme';
+    case 'Extreme':
+      return 'Extreme';
+  }
+}
+
+/**
+ * Determines Risk Level from adjusted temperature:
+ * below 32 Low
+ * 32 to below 38 Caution
+ * 38 to below 46 Danger
+ * 46 and above Extreme
+ *
+ * Optionally accepts vulnerability (boolean, age string, or healthHistory array)
+ * to move the risk one step stricter (Low->Caution->Danger->Extreme).
+ */
+export function getRiskLevel(
+  adjustedTemp: number,
+  isVulnerableOrAge?: boolean | string | null,
+  healthHistory?: string[] | string | null
+): RiskLevel {
+  let base: RiskLevel = 'Extreme';
+  if (adjustedTemp < RISK_THRESHOLD_LOW) base = 'Low';
+  else if (adjustedTemp < RISK_THRESHOLD_CAUTION) base = 'Caution';
+  else if (adjustedTemp < RISK_THRESHOLD_DANGER) base = 'Danger';
+  else base = 'Extreme';
+
+  let isVulnerable = false;
+  if (typeof isVulnerableOrAge === 'boolean') {
+    isVulnerable = isVulnerableOrAge;
+  } else if (typeof isVulnerableOrAge === 'string' || healthHistory) {
+    isVulnerable = isVulnerableUser(isVulnerableOrAge, healthHistory);
+  }
+
+  if (isVulnerable) {
+    return getStricterRiskLevel(base);
+  }
+  return base;
 }
 
 /**
  * UV index display label.
- * 0 to 2: Low
- * 3 to 5: Moderate
- * 6 to 7: High
- * 8 to 10: Very high
- * 11+: Extreme
+ * 0-2 Low
+ * 3-5 Moderate
+ * 6-7 High
+ * 8-10 Very high
+ * 11+ Extreme
  */
 export function getUvLabel(uv: number): UvLabel {
   if (uv <= 2) return 'Low';
@@ -137,40 +187,109 @@ export function getUvLabel(uv: number): UvLabel {
 }
 
 /**
- * Computes safer hours ranges and peak avoid hours.
- * An hour is safer when adjustedFeelsLike < RISK_THRESHOLD_DANGER (46) AND uv < 6, or it is night (uv == 0).
+ * Computes adjusted feels-like for a specific hour (0-23) from hourly arrays.
+ * Accepts optional riskStep / age & healthHistory to apply vulnerability tier strictness.
  */
-export function computeSafeWindows(
+export function adjustedFeelsLikeForHour(
+  hour: number,
   apparentTemps: number[] = DEFAULT_HOURLY_APPARENT_TEMP,
   uvIndices: number[] = DEFAULT_HOURLY_UV_INDEX,
-  bucket: ExposureBucket | string = '2 to 6 hours'
+  bucket: ExposureBucket | string = '2 to 6 hours',
+  riskStepOrAge?: boolean | string | null,
+  healthHistory?: string[] | string | null
 ): {
+  hour: number;
+  rawFeelsLike: number;
+  uv: number;
+  uvOff: number;
+  expOff: number;
+  adjusted: number;
+  baseRiskLevel: RiskLevel;
+  riskLevel: RiskLevel;
+  uvLabel: UvLabel;
+  isStricter: boolean;
+} {
+  const h = Math.max(0, Math.min(23, hour));
+  const rawFeelsLike = apparentTemps[h] ?? 38;
+  const uv = uvIndices[h] ?? 5;
+  const uvOff = uvOffset(uv);
+  const expOff = exposureOffset(bucket);
+  const adjusted = rawFeelsLike + uvOff + expOff;
+
+  let isVulnerable = false;
+  if (typeof riskStepOrAge === 'boolean') {
+    isVulnerable = riskStepOrAge;
+  } else if (typeof riskStepOrAge === 'string' || healthHistory) {
+    isVulnerable = isVulnerableUser(riskStepOrAge, healthHistory);
+  }
+
+  const baseRiskLevel = getRiskLevel(adjusted, false);
+  const riskLevel = getRiskLevel(adjusted, isVulnerable);
+  const uvLabel = getUvLabel(uv);
+
+  return {
+    hour: h,
+    rawFeelsLike,
+    uv,
+    uvOff,
+    expOff,
+    adjusted,
+    baseRiskLevel,
+    riskLevel,
+    uvLabel,
+    isStricter: isVulnerable
+  };
+}
+
+export type SafeWindowsResult = string[] & {
   saferRanges: string[];
   avoidRanges: string[];
   hourlyAdjusted: number[];
-} {
+};
+
+/**
+ * Computes safe windows for outdoor activity:
+ * Returns the hours of the day that are Low or Caution, as readable ranges like "6 AM to 9 AM".
+ */
+export function computeSafeWindows(
+  hourlyApparent: number[] = DEFAULT_HOURLY_APPARENT_TEMP,
+  hourlyUv: number[] = DEFAULT_HOURLY_UV_INDEX,
+  exposureHours: ExposureBucket | string = '2 to 6 hours',
+  riskStepOrAge?: boolean | string | null,
+  healthHistory?: string[] | string | null
+): SafeWindowsResult {
   const hourlyAdjusted: number[] = [];
   const isSaferHour: boolean[] = [];
 
+  let isVulnerable = false;
+  if (typeof riskStepOrAge === 'boolean') {
+    isVulnerable = riskStepOrAge;
+  } else if (typeof riskStepOrAge === 'string' || healthHistory) {
+    isVulnerable = isVulnerableUser(riskStepOrAge, healthHistory);
+  }
+
   for (let h = 0; h < 24; h++) {
-    const raw = apparentTemps[h] ?? 30;
-    const uv = uvIndices[h] ?? 0;
-    const adj = adjustedFeelsLike(raw, uv, bucket);
+    const raw = hourlyApparent[h] ?? 30;
+    const uv = hourlyUv[h] ?? 0;
+    const adj = adjustedFeelsLike(raw, uv, exposureHours);
     hourlyAdjusted.push(adj);
 
-    // Safer when adjusted is below Danger (38) or below 46 with low UV, or at night
-    const isSafe = adj < RISK_THRESHOLD_DANGER && (uv < 6 || uv === 0 || h < 7 || h >= 18);
+    const effRisk = getRiskLevel(adj, isVulnerable);
+    // An hour is safe when effective risk is Low or Caution
+    const isSafe = effRisk === 'Low' || effRisk === 'Caution';
     isSaferHour.push(isSafe);
   }
 
-  // Merge consecutive hours into ranges
+  // Format hour (e.g. 6 -> "6 AM", 12 -> "12 PM", 0 -> "12 AM")
+  const toTime = (h: number): string => {
+    const normalized = ((h % 24) + 24) % 24;
+    const ampm = normalized >= 12 ? 'PM' : 'AM';
+    const d = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${d} ${ampm}`;
+  };
+
   const formatRange = (start: number, end: number): string => {
-    const toTime = (h: number) => {
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const d = h % 12 === 0 ? 12 : h % 12;
-      return `${d} ${ampm}`;
-    };
-    return `${toTime(start)} – ${toTime((end + 1) % 24)}`;
+    return `${toTime(start)} to ${toTime((end + 1) % 24)}`;
   };
 
   const saferRanges: string[] = [];
@@ -199,7 +318,13 @@ export function computeSafeWindows(
     else avoidRanges.push(r);
   }
 
-  return { saferRanges, avoidRanges, hourlyAdjusted };
+  const result = Object.assign([...saferRanges], {
+    saferRanges,
+    avoidRanges,
+    hourlyAdjusted
+  }) as SafeWindowsResult;
+
+  return result;
 }
 
 /**
@@ -208,6 +333,7 @@ export function computeSafeWindows(
 export const WORKED_EXAMPLES_TESTS = [
   {
     id: 1,
+    label: "Example 1 (Light Sun & Moderate UV)",
     apparentTemp: 38,
     uv: 4,
     bucket: "Up to 2 hours" as ExposureBucket,
@@ -216,6 +342,7 @@ export const WORKED_EXAMPLES_TESTS = [
   },
   {
     id: 2,
+    label: "Example 2 (High UV + Moderate Exposure)",
     apparentTemp: 38,
     uv: 7,
     bucket: "2 to 6 hours" as ExposureBucket,
@@ -224,6 +351,7 @@ export const WORKED_EXAMPLES_TESTS = [
   },
   {
     id: 3,
+    label: "Example 3 (Extreme UV + Extended Sun)",
     apparentTemp: 41,
     uv: 12,
     bucket: "More than 6 hours" as ExposureBucket,
@@ -232,6 +360,7 @@ export const WORKED_EXAMPLES_TESTS = [
   },
   {
     id: 4,
+    label: "Example 4 (UV 10 Peak Boundary => Extreme)",
     apparentTemp: 44,
     uv: 10,
     bucket: "2 to 6 hours" as ExposureBucket,
@@ -239,4 +368,3 @@ export const WORKED_EXAMPLES_TESTS = [
     expectedRisk: "Extreme" as RiskLevel
   }
 ];
-

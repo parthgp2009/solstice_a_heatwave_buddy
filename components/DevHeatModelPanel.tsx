@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppState } from "@/context/AppStateContext";
 import {
@@ -8,7 +8,9 @@ import {
   getRiskLevel,
   adjustedFeelsLikeForHour,
   computeSafeWindows,
-  WORKED_EXAMPLES_TESTS
+  isVulnerableUser,
+  DEFAULT_HOURLY_APPARENT_TEMP,
+  DEFAULT_HOURLY_UV_INDEX
 } from "@/lib/heatModel";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Tick02Icon, Alert02Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
@@ -61,25 +63,25 @@ const WORKED_EXAMPLES: WorkedExampleTest[] = [
 
 function DevHeatModelPanelInner() {
   const searchParams = useSearchParams();
-  const [isOpen, setIsOpen] = useState(false);
+  const isDevUrl = searchParams.get("dev") === "true" || searchParams.get("test") === "true";
+  const [isOpenOverride, setIsOpenOverride] = useState<boolean | null>(null);
+  const isOpen = isOpenOverride !== null ? isOpenOverride : isDevUrl;
   const { sunHours, selectedHour, age, healthHistory } = useAppState();
 
-  const isDevUrl = searchParams.get("dev") === "true" || searchParams.get("test") === "true";
-
-  useEffect(() => {
-    if (isDevUrl) {
-      setIsOpen(true);
-    }
-  }, [isDevUrl]);
-
-  const reading = adjustedFeelsLikeForHour(selectedHour, undefined, undefined, sunHours);
-  const { saferRanges, avoidRanges } = computeSafeWindows(undefined, undefined, sunHours);
-
-  const isVulnerable =
-    age === "Under 18" ||
-    age === "Over 60" ||
-    healthHistory.includes("heatstroke") ||
-    healthHistory.includes("exhaustion");
+  const isVulnerable = isVulnerableUser(age, healthHistory);
+  const reading = adjustedFeelsLikeForHour(
+    selectedHour,
+    DEFAULT_HOURLY_APPARENT_TEMP,
+    DEFAULT_HOURLY_UV_INDEX,
+    sunHours,
+    isVulnerable
+  );
+  const { saferRanges, avoidRanges } = computeSafeWindows(
+    DEFAULT_HOURLY_APPARENT_TEMP,
+    DEFAULT_HOURLY_UV_INDEX,
+    sunHours,
+    isVulnerable
+  );
 
   return (
     <aside className="fixed bottom-12 right-4 z-40 max-w-md w-[calc(100vw-2rem)] select-none">
@@ -87,7 +89,7 @@ function DevHeatModelPanelInner() {
       <div className="flex justify-end mb-2">
         <button
           type="button"
-          onClick={() => setIsOpen(prev => !prev)}
+          onClick={() => setIsOpenOverride(prev => !(prev !== null ? prev : isDevUrl))}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1E2A44] text-[#FFFAF4] text-xs font-bold shadow-lg hover:bg-[#F47A1F] transition-all cursor-pointer border border-[#FFFAF4]/20"
         >
           <span>🔬 Heat Model Dev Panel</span>
@@ -115,7 +117,7 @@ function DevHeatModelPanelInner() {
             </div>
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={() => setIsOpenOverride(false)}
               className="text-xs font-bold text-[#5B6577] hover:text-[#1E2A44] px-2 py-0.5"
             >
               Close
