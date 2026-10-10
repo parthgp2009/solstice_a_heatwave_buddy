@@ -1,24 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --clay-cream: #EFE0C0;
-  --turmeric: #E3A81F;
-  --terracotta: #C4552F;
-  --deep-leaf-green: #1E4A38;
-  --river-indigo: #24407A;
-  --ink: #16130F;
+  --cream: #FBF4E6;
+  --blossom-pink: #F3C6CF;
+  --mint: #BFE0C4;
+  --fresh-leaf: #8CC49A;
+  --butter-yellow: #F6E3A1;
+  --sky-blue: #BFDDEB;
+  --peach: #F6CDB0;
+  --text-outline: #2B3A2E;
 
-  --background: var(--clay-cream);
-  --foreground: var(--ink);
+  --background: var(--cream);
+  --foreground: var(--text-outline);
 }
 
 @theme inline {
-  --color-clay: var(--clay-cream);
-  --color-turmeric: var(--turmeric);
-  --color-terracotta: var(--terracotta);
-  --color-leaf: var(--deep-leaf-green);
-  --color-river: var(--river-indigo);
-  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --color-blossom: var(--blossom-pink);
+  --color-mint: var(--mint);
+  --color-fresh-leaf: var(--fresh-leaf);
+  --color-butter: var(--butter-yellow);
+  --color-sky: var(--sky-blue);
+  --color-peach: var(--peach);
+  --color-text: var(--text-outline);
 
   --font-serif: var(--font-rozha);
   --font-sans: var(--font-hind);
@@ -33,8 +37,8 @@
 
 html,
 body {
-  background-color: var(--clay-cream);
-  color: var(--ink);
+  background-color: var(--cream);
+  color: var(--text-outline);
   font-family: var(--font-hind), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -49,48 +53,114 @@ h6 {
   font-family: var(--font-rozha), Georgia, serif;
 }
 
-/* Subtle leaf sway animation - no hover required */
-@keyframes leafSway {
+/* Gentle ambient blossom sway */
+@keyframes blossomSway {
   0% {
     transform: rotate(0deg);
   }
   50% {
-    transform: rotate(2deg);
+    transform: rotate(1.2deg);
   }
   100% {
-    transform: rotate(-1.5deg);
+    transform: rotate(-1deg);
   }
 }
 
-.animate-leaf-sway {
-  transform-origin: top center;
-  animation: leafSway 4.5s ease-in-out infinite alternate;
+.animate-blossom-sway {
+  transform-origin: 880px 300px;
+  animation: blossomSway 5s ease-in-out infinite alternate;
 }
 
-/* Gentle river ripple drift */
-@keyframes riverDrift {
+/* Falling blossom petals drifting softly */
+@keyframes petalDrift1 {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-110px, 190px) rotate(140deg);
+    opacity: 0;
+  }
+}
+
+@keyframes petalDrift2 {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.95;
+  }
+  80% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-85px, 210px) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+.animate-petal-1 {
+  animation: petalDrift1 7s ease-in-out infinite;
+}
+
+.animate-petal-2 {
+  animation: petalDrift2 9s ease-in-out infinite 2.5s;
+}
+
+.animate-petal-3 {
+  animation: petalDrift1 8s ease-in-out infinite 5s;
+}
+
+/* Butterfly gentle flight flutter */
+@keyframes butterflyFly1 {
+  0% {
+    transform: translate(0, 0) rotate(-3deg);
+  }
+  50% {
+    transform: translate(32px, -22px) rotate(4deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(-3deg);
+  }
+}
+
+@keyframes butterflyFly2 {
+  0% {
+    transform: translate(0, 0) rotate(3deg);
+  }
+  50% {
+    transform: translate(-28px, -18px) rotate(-4deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(3deg);
+  }
+}
+
+.animate-butterfly-1 {
+  animation: butterflyFly1 6s ease-in-out infinite;
+}
+
+.animate-butterfly-2 {
+  animation: butterflyFly2 7.5s ease-in-out infinite 1s;
+}
+
+/* River ripple gentle drift */
+@keyframes riverFlow {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-18px);
+    transform: translateX(-24px);
   }
 }
 
-.animate-river-ripple {
-  animation: riverDrift 6s linear infinite;
-}
-
-/* Gentle bird drift */
-@keyframes birdFly {
-  0% {
-    transform: translateX(-80px);
-  }
-  100% {
-    transform: translateX(110vw);
-  }
-}
-
-.animate-bird-flight {
-  animation: birdFly 32s linear infinite;
+.animate-river-flow {
+  animation: riverFlow 7s linear infinite;
 }

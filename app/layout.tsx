@@ -17,8 +17,8 @@ const hind = Hind({
 });
 
 export const metadata: Metadata = {
-  title: "Heatwave Buddy | Living Landscape Heat Safety",
-  description: "Real-time heat safety guidance and living Indian landscape heat map.",
+  title: "Heatwave Buddy | Spring Landscape Heat Safety",
+  description: "Real-time heat safety guidance and living Spring landscape heat map.",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${rozhaOne.variable} ${hind.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#EFE0C0] text-[#16130F]">
+      <body className="min-h-full flex flex-col font-sans bg-[#FBF4E6] text-[#2B3A2E]">
         {children}
       </body>
     </html>
