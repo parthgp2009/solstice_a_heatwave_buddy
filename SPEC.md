@@ -1,9 +1,20 @@
 # Project Specification: Heatwave Buddy (लू साथी)
 
 ## 1. Overview
-**Heatwave Buddy** (लू साथी) is a mobile-first, single-page web app designed for people in India facing extreme heat (such as delivery riders, farmers, students, traffic police, office workers, and vulnerable age groups).
+**Heatwave Buddy / Solstice** (लू साथी) is a mobile-first, multi-page web application designed for people in India facing extreme heat (such as delivery riders, farmers, students, traffic police, office workers, and vulnerable age groups).
 
-The app detects live temperature and feels-like heat index for the user's location, accepts their age, occupation, sun hours, and optional health history, computes an **Adjusted Feels-Like temperature** using a rigorous heat model, generates a personalized heat safety plan with hydration and work timings, provides bilingual support (English as default with an instant switch for Hindi), includes a voice readout ("Listen") powered by **Amazon Polly** (with Web Speech fallback), offers emergency direct dialing for Indian Ambulance (**108**), and supports Google Sign-In via Supabase.
+### Multi-Page System Architecture
+The application is structured into specialized routes:
+* **`/` (Home)**: High-impact hero, real-time adjusted temperature, live reading card, phone-style plan preview, and the India Heat Toll crisis tagline banner.
+* **`/about` (About)**: Detailed public health context featuring the **India Heat Toll Statistics (2024)** infographic (`tagline.jpeg`), Solstice mission, scientific heat model methodology, and prevention steps.
+* **`/plan` (Safety Plan)**: Dedicated full-screen plan builder with live risk assessment, customized hydration scheduling, and tailored age/occupation/health protocols.
+* **`/faqs` (FAQs)**: Interactive bilingual question-and-answer library covering heatstroke warning signs, UV index adjustments, and emergency protocols.
+* **`/privacy` (Privacy Policy)**: Strict zero-storage guarantees (exact GPS coordinates never stored, local-only health considerations, permanent under-18 privacy lock).
+* **`/terms` (Terms of Service)**: Legal and medical disclaimers emphasizing occupational heat stress guidance and immediate 108 ambulance dialing.
+
+### Branding & Logo Integration
+* **Top-Left Logo**: Features the official **Solstice** logo with circular temperature gauge 'o' and thermometer 'l', transparently blended into the cream page background.
+* **Tagline**: Features the official India Heat Toll Statistics infographic from `tagline.jpeg` ("Over 48,000 Suspected Heatstroke Cases and 161 Confirmed Deaths") as an authoritative crisis banner and modal preview on the home screen, and a full spotlight on the About page.
 
 ---
 

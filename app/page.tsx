@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import HeroBackground from "@/components/HeroBackground";
 import PlanBuilderCard from "@/components/PlanBuilderCard";
 import LiveReadingCard from "@/components/LiveReadingCard";
 import SafetyPlanCard from "@/components/SafetyPlanCard";
 import FeatureRow from "@/components/FeatureRow";
+import TaglineCard from "@/components/TaglineCard";
 import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
 import InfoModals from "@/components/InfoModals";
 import { AppStateProvider, useAppState } from "@/context/AppStateContext";
@@ -19,11 +21,11 @@ function HeroContent() {
       {/* Background with hero photo, sun glow, haze, heat shimmer, rising specks & cream swoosh */}
       <HeroBackground adjustedFeelsLikeTemp={40} />
 
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar with blended Solstice Logo */}
       <TopBar />
 
       {/* Main Hero Container */}
-      <main className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
+      <main className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-12">
         <div className="grid grid-cols-1 min-[900px]:grid-cols-12 gap-8 lg:gap-10 items-start">
           
           {/* HERO LEFT SIDE (col-span-7 above 900px) */}
@@ -47,11 +49,14 @@ function HeroContent() {
               </p>
             </div>
 
+            {/* Tagline Crisis Banner using tagline.jpeg */}
+            <TaglineCard />
+
             {/* Rounded Plan Builder Card */}
             <PlanBuilderCard />
 
-            {/* Feature Row on Desktop (Under plan builder or below hero) */}
-            <div className="hidden min-[900px]:block mt-2">
+            {/* Feature Row on Desktop */}
+            <div className="hidden min-[900px]:block mt-1">
               <FeatureRow />
             </div>
           </div>
@@ -71,23 +76,27 @@ function HeroContent() {
           </div>
         </div>
 
-        {/* Quick Footer Links for Modals */}
+        {/* Quick Multi-Page Links */}
         <div className="mt-8 pt-6 border-t border-[#1E2A44]/10 flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-[#5B6577]">
-          <button
-            type="button"
-            onClick={() => setActiveModal("privacy")}
-            className="hover:text-[#F47A1F] cursor-pointer"
-          >
-            Privacy Policy
-          </button>
+          <Link href="/about" className="hover:text-[#F47A1F] transition-colors">
+            About Solstice
+          </Link>
           <span>•</span>
-          <button
-            type="button"
-            onClick={() => setActiveModal("terms")}
-            className="hover:text-[#F47A1F] cursor-pointer"
-          >
+          <Link href="/plan" className="hover:text-[#F47A1F] transition-colors">
+            Full Safety Plan
+          </Link>
+          <span>•</span>
+          <Link href="/faqs" className="hover:text-[#F47A1F] transition-colors">
+            Frequently Asked Questions
+          </Link>
+          <span>•</span>
+          <Link href="/privacy" className="hover:text-[#F47A1F] transition-colors">
+            Privacy Policy
+          </Link>
+          <span>•</span>
+          <Link href="/terms" className="hover:text-[#F47A1F] transition-colors">
             Terms of Service
-          </button>
+          </Link>
         </div>
       </main>
 

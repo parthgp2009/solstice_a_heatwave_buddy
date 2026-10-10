@@ -1,0 +1,88 @@
+"use client";
+
+import React from "react";
+import TopBar from "@/components/TopBar";
+import BottomDisclaimerStrip from "@/components/BottomDisclaimerStrip";
+import { AppStateProvider, useAppState } from "@/context/AppStateContext";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Call02Icon, Alert02Icon } from "@hugeicons/core-free-icons";
+
+function TermsContent() {
+  const { lang } = useAppState();
+
+  return (
+    <div className="relative min-h-screen flex flex-col justify-between selection:bg-[#F47A1F] selection:text-[#FFFAF4] pb-24 bg-[#FDF3E7]">
+      <TopBar />
+
+      <main className="relative z-20 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#F47A1F]">
+            {lang === "hi" ? "सेवा की शर्तें" : "Terms of Service"}
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1E2A44] tracking-tight">
+            {lang === "hi" ? "उपयोग की शर्तें और अस्वीकरण" : "Terms of Service & Medical Disclaimer"}
+          </h1>
+          <p className="text-sm text-[#5B6577] font-medium leading-relaxed">
+            {lang === "hi"
+              ? "सोलस्टाइस (लू साथी) के उपयोग से जुड़ी महत्वपूर्ण शर्तें और सुरक्षा दिशानिर्देश।"
+              : "Important guidelines regarding our occupational safety recommendations and emergency care."}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-6 text-[#1E2A44]">
+          {/* Section 1: Non-Medical Disclaimer */}
+          <div className="bg-[#FFFAF4] border border-[#D92D20]/25 rounded-[20px] p-6 card-shadow flex flex-col gap-3">
+            <div className="flex items-center gap-2.5 text-[#D92D20]">
+              <HugeiconsIcon icon={Alert02Icon} size={20} strokeWidth={2.4} />
+              <h2 className="text-lg font-extrabold text-[#1E2A44]">
+                {lang === "hi" ? "1. चिकित्सीय सलाह नहीं है (सामान्य मार्गदर्शन)" : "1. Not a Substitute for Medical Advice"}
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-[#5B6577] leading-relaxed font-medium">
+              {lang === "hi"
+                ? "सोलस्टाइस द्वारा प्रदान की जाने वाली योजना केवल सामान्य व्यावसायिक और गर्मी से बचाव का मार्गदर्शन है। यह किसी भी चिकित्सक, अस्पताल या प्रमाणित स्वास्थ्य पेशेवर की सलाह या निदान का स्थान नहीं ले सकती। यदि आपको कोई पूर्व चिकित्सीय समस्या है, तो हमेशा अपने डॉक्टर की सलाह का पालन करें।"
+                : "The plans and alerts provided by Solstice are general occupational heat stress guidance and preventative measures only. They do not constitute certified medical diagnosis or clinical treatment. If you have an underlying medical condition, always prioritize your licensed physician's guidance."}
+            </p>
+          </div>
+
+          {/* Section 2: Emergency 108 Protocol */}
+          <div className="bg-[#FFFAF4] border border-[#1E2A44]/15 rounded-[20px] p-6 card-shadow flex flex-col gap-3">
+            <div className="flex items-center gap-2.5 text-[#D92D20]">
+              <HugeiconsIcon icon={Call02Icon} size={20} strokeWidth={2.4} />
+              <h2 className="text-lg font-extrabold text-[#1E2A44]">
+                {lang === "hi" ? "2. आपातकालीन 108 एम्बुलेंस प्रोटोकॉल" : "2. Immediate 108 Emergency Protocol"}
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-[#5B6577] leading-relaxed font-medium">
+              {lang === "hi"
+                ? "यदि आप या आपके आसपास कोई व्यक्ति गंभीर गर्मी के लक्षण (जैसे चक्कर आना, उल्टी, तेज बुखार, भ्रांति या बेहोशी) महसूस करता है, तो वेबसाइट पर निर्भर न रहें और तुरंत 108 डायल करके आपातकालीन एम्बुलेंस बुलाएं।"
+                : "In the event of acute heat exhaustion, disorientation, rapid heart rate, cessation of sweating, or loss of consciousness, do not rely solely on digital applications. Immediately call 108 for an emergency ambulance and initiate immediate cooling first aid."}
+            </p>
+          </div>
+
+          {/* Section 3: Weather Data Disclaimers */}
+          <div className="bg-[#FFFAF4] border border-[#1E2A44]/15 rounded-[20px] p-6 card-shadow flex flex-col gap-3">
+            <h2 className="text-lg font-extrabold text-[#1E2A44]">
+              {lang === "hi" ? "3. मौसम पूर्वानुमान और सटीकता" : "3. Meteorological Data & Forecast Accuracy"}
+            </h2>
+            <p className="text-xs sm:text-sm text-[#5B6577] leading-relaxed font-medium">
+              {lang === "hi"
+                ? "मौसम डेटा ओपन-मेटियो वैश्विक मॉडल से प्राप्त होता है। स्थानीय सूक्ष्म जलवायु परिस्थितियां (जैसे कंक्रीट की सड़कें, वाहन की गर्मी या बंद कमरे) वास्तविक तापमान को प्रभावित कर सकती हैं।"
+                : "Weather and UV metrics are sourced via open meteorological models (Open-Meteo). Actual microclimates (such as direct asphalt radiation, traffic proximity, or unventilated spaces) can cause local temperatures to vary. Users are advised to exercise common sense precaution."}
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <BottomDisclaimerStrip />
+    </div>
+  );
+}
+
+export default function TermsPage() {
+  return (
+    <AppStateProvider>
+      <TermsContent />
+    </AppStateProvider>
+  );
+}
