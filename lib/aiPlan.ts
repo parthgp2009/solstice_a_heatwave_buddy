@@ -17,6 +17,11 @@ export interface PlanAIResponse {
   healthAdvice: string[];
   actionableTips: string[];
   source: "gemini" | "rule-based";
+  sunExposureAdvice?: string;
+  appliedCity?: string;
+  appliedAge?: string;
+  appliedOccupation?: string;
+  appliedSunHours?: string;
 }
 
 /**
@@ -27,6 +32,7 @@ export function generateFallbackPlan(input: PlanRequestInput): PlanAIResponse {
   const isHi = input.lang === "hi";
   const age = input.age || "31 to 45";
   const occupation = input.occupation || "Not specified";
+  const sunHours = input.sunHours || "2 to 6 hours";
   const healthHistory = Array.isArray(input.healthHistory) ? input.healthHistory : [];
 
   // Age advice
@@ -129,11 +135,32 @@ export function generateFallbackPlan(input: PlanRequestInput): PlanAIResponse {
         "Call 108 ambulance immediately if confusion, fainting, or cessation of sweating occurs."
       ];
 
+  // Sun hours advice
+  let sunExposureAdvice: string;
+  if (sunHours === "More than 6 hours") {
+    sunExposureAdvice = isHi
+      ? "6 घंटे से अधिक धूप: डिहाइड्रेशन और हीटस्ट्रोक का अत्यधिक जोखिम। हर 45 मिनट में छांव में जाएं, कम से कम 4 लीटर पानी पिएं और ओआरएस घोल लें।"
+      : "More than 6 hours sun exposure: High hyperthermia risk. Mandatory 10-minute shade rest every 45 minutes, drink 4.0L fluid target, and consume ORS.";
+  } else if (sunHours === "2 to 6 hours") {
+    sunExposureAdvice = isHi
+      ? "2 से 6 घंटे धूप: मध्यम जोखिम। नियमित रूप से पानी पिएं, सिर को ढकें और दोपहर 12 से 3 बजे के बीच सीधी धूप से बचें।"
+      : "2 to 6 hours sun exposure: Moderate heat load. Hydrate every 30 minutes, wear sun protection, and seek shade during midday peaks.";
+  } else {
+    sunExposureAdvice = isHi
+      ? "2 घंटे तक धूप: हल्की धूप, लेकिन बुनियादी जल संतुलन बनाए रखें और प्यास लगने से पहले पानी पिएं।"
+      : "Up to 2 hours sun exposure: Low direct exposure, but maintain steady baseline hydration (at least 2.0L daily).";
+  }
+
   return {
     ageAdvice,
     occupationAdvice,
     healthAdvice,
     actionableTips,
+    sunExposureAdvice,
+    appliedCity: input.city,
+    appliedAge: input.age,
+    appliedOccupation: input.occupation,
+    appliedSunHours: input.sunHours,
     source: "rule-based"
   };
 }
@@ -166,6 +193,7 @@ Respond in STRICT JSON with this exact schema:
 {
   "ageAdvice": "Concise 1-sentence medical advice for this age group",
   "occupationAdvice": "Concise 1-sentence practical work tip for this occupation",
+  "sunExposureAdvice": "Concise 1-sentence hydration & shade tip based on their daily sun hours",
   "healthAdvice": ["1-2 concise medical precautions considering their health history"],
   "actionableTips": ["3 brief, practical emergency and hydration bullet points"]
 }`;
@@ -208,11 +236,17 @@ Respond in STRICT JSON with this exact schema:
     }
 
     const parsed = JSON.parse(rawText);
+    const fallback = generateFallbackPlan(input);
     return {
-      ageAdvice: typeof parsed.ageAdvice === "string" ? parsed.ageAdvice : generateFallbackPlan(input).ageAdvice,
-      occupationAdvice: typeof parsed.occupationAdvice === "string" ? parsed.occupationAdvice : generateFallbackPlan(input).occupationAdvice,
-      healthAdvice: Array.isArray(parsed.healthAdvice) && parsed.healthAdvice.length > 0 ? parsed.healthAdvice : generateFallbackPlan(input).healthAdvice,
-      actionableTips: Array.isArray(parsed.actionableTips) && parsed.actionableTips.length > 0 ? parsed.actionableTips : generateFallbackPlan(input).actionableTips,
+      ageAdvice: typeof parsed.ageAdvice === "string" ? parsed.ageAdvice : fallback.ageAdvice,
+      occupationAdvice: typeof parsed.occupationAdvice === "string" ? parsed.occupationAdvice : fallback.occupationAdvice,
+      sunExposureAdvice: typeof parsed.sunExposureAdvice === "string" ? parsed.sunExposureAdvice : fallback.sunExposureAdvice,
+      healthAdvice: Array.isArray(parsed.healthAdvice) && parsed.healthAdvice.length > 0 ? parsed.healthAdvice : fallback.healthAdvice,
+      actionableTips: Array.isArray(parsed.actionableTips) && parsed.actionableTips.length > 0 ? parsed.actionableTips : fallback.actionableTips,
+      appliedCity: input.city,
+      appliedAge: input.age,
+      appliedOccupation: input.occupation,
+      appliedSunHours: input.sunHours,
       source: "gemini"
     };
   } catch {

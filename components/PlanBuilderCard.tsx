@@ -60,6 +60,7 @@ export default function PlanBuilderCard() {
   const [citySuggestions, setCitySuggestions] = useState<CitySearchResult[]>([]);
   const [isSearchingCity, setIsSearchingCity] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string>("");
+  const [justSubmitted, setJustSubmitted] = useState<boolean>(false);
 
   const isOtherCity = city === "OTHER_SEARCH";
 
@@ -132,6 +133,16 @@ export default function PlanBuilderCard() {
     }
     setValidationError("");
     setPlanSubmitted(true);
+    setJustSubmitted(true);
+
+    const card = document.getElementById("safety-plan-card");
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    setTimeout(() => {
+      setJustSubmitted(false);
+    }, 2500);
   };
 
   const handleLocationClick = () => {
@@ -429,13 +440,24 @@ export default function PlanBuilderCard() {
           onClick={handleGetPlan}
           disabled={!isFormValid}
           className={`w-full py-3.5 px-6 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2.5 transition-all shadow-md ${
-            isFormValid
+            justSubmitted
+              ? "bg-[#2E9E5B] text-[#FFFAF4] scale-[1.01]"
+              : isFormValid
               ? "bg-[#F47A1F] text-[#FFFAF4] hover:bg-[#E06912] active:scale-[0.99] cursor-pointer"
               : "bg-[#5B6577]/30 text-[#1E2A44]/50 cursor-not-allowed"
           }`}
         >
-          <span>{t.planBuilder.getPlanButton}</span>
-          <HugeiconsIcon icon={ArrowRight01Icon} size={18} strokeWidth={2.4} />
+          {justSubmitted ? (
+            <>
+              <HugeiconsIcon icon={Tick02Icon} size={18} strokeWidth={2.5} />
+              <span>{lang === "hi" ? "✓ योजना तैयार व अपडेट हो गई!" : "✓ Plan Generated & Synced!"}</span>
+            </>
+          ) : (
+            <>
+              <span>{t.planBuilder.getPlanButton}</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={18} strokeWidth={2.4} />
+            </>
+          )}
         </button>
 
         {/* Location Fallback Trigger & Privacy Guarantee */}

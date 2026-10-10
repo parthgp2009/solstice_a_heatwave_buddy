@@ -100,6 +100,33 @@ async function runAiPlanTests() {
     process.exit(1);
   }
 
+  // 5. Test Sun Hours advice and Custom Health Note
+  console.log("\nTesting Sun hours advice and custom health note in fallback plan...");
+  const sunAndNotePlan = generateFallbackPlan({
+    city: "Kolkata",
+    age: "31 to 45",
+    occupation: "Farmer",
+    sunHours: "More than 6 hours",
+    healthHistory: ["none"],
+    customHealthNote: "Diabetic patient on insulin",
+    lang: "en",
+    adjustedTemp: 45,
+    riskLevel: "Danger"
+  });
+
+  console.log(`Sun Hours Advice: ${sunAndNotePlan.sunExposureAdvice}`);
+  console.log(`Health Advice (includes note): ${sunAndNotePlan.healthAdvice.join("; ")}`);
+  console.log(`Applied Sun Hours: ${sunAndNotePlan.appliedSunHours}`);
+
+  if (
+    !sunAndNotePlan.sunExposureAdvice?.includes("More than 6 hours") ||
+    !sunAndNotePlan.healthAdvice.some(h => h.includes("Diabetic patient on insulin")) ||
+    sunAndNotePlan.appliedSunHours !== "More than 6 hours"
+  ) {
+    console.error("Sun hours and custom health note test failed!");
+    process.exit(1);
+  }
+
   console.log("\nALL AI PLAN ADVISORY TESTS PASSED SUCCESSFULLY");
 }
 

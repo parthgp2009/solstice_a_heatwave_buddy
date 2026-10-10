@@ -15,7 +15,7 @@ import {
   computeSafeWindows,
   isVulnerableUser
 } from "@/lib/heatModel";
-import { PlanAIResponse } from "@/lib/aiPlan";
+import { PlanAIResponse, generateFallbackPlan } from "@/lib/aiPlan";
 import AudioListenButton from "@/components/AudioListenButton";
 
 const subscribeReducedMotion = (callback: () => void) => {
@@ -26,12 +26,46 @@ const subscribeReducedMotion = (callback: () => void) => {
 const getReducedMotionSnapshot = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const getReducedMotionServerSnapshot = () => false;
 
+function getOccupationShiftTip(occ: string, lang: "en" | "hi"): string {
+  if (lang === "hi") {
+    switch (occ) {
+      case "Delivery Driver":
+        return "दोपहर 12 से 3 बजे के बीच लंबी राइड से बचें और हर डिलीवरी के बीच 2 मिनट छांव में सुस्ताएं।";
+      case "Farmer":
+        return "खेत का भारी काम भोर में सुबह 10 बजे से पहले करें और दोपहर की तेज धूप में काम रोकें।";
+      case "Traffic Police":
+        return "हर 45 मिनट में बूथ की छांव में रोटेशन ड्यूटी करें और गीला सूती रुमाल साथ रखें।";
+      case "Student":
+        return "दोपहर के समय इनडोर कमरों में रहें और सीधी धूप वाले बाहरी खेलकूद से बचें।";
+      case "Office Worker":
+        return "सुबह 9 बजे से पहले या शाम 5:30 बजे के बाद आवागमन करें और एसी में भी पानी पीते रहें।";
+      default:
+        return "दोपहर की तेज धूप (12-4 बजे) में बाहरी गतिविधियां कम से कम रखें।";
+    }
+  }
+  switch (occ) {
+    case "Delivery Driver":
+      return "Plan longer routes before 11 AM; take 2-min shaded rests between drops and avoid 12-3 PM heat peak.";
+    case "Farmer":
+      return "Begin field tasks at dawn before 10 AM; suspend heavy open-field exertion during noon hours.";
+    case "Traffic Police":
+      return "Rotate junction posts every 45 mins with shaded booth breaks; keep wet neck cloth handy.";
+    case "Student":
+      return "Stay in shaded classrooms during midday lunch break; avoid unshaded sports in peak sun.";
+    case "Office Worker":
+      return "Commute before 9 AM or after 5:30 PM; avoid abrupt cold-to-hot street transitions.";
+    default:
+      return "Limit outdoor exertion during peak afternoon hours (12-4 PM).";
+  }
+}
+
 export default function SafetyPlanCard() {
   const {
     lang,
     setLang,
     t,
     city,
+    customCity,
     age,
     occupation,
     sunHours,
@@ -45,6 +79,8 @@ export default function SafetyPlanCard() {
   const [aiPlan, setAiPlan] = useState<PlanAIResponse | null>(null);
   const [isLoadingAiPlan, setIsLoadingAiPlan] = useState<boolean>(false);
   const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, getReducedMotionServerSnapshot);
+
+  const displayCity = customCity || (city === "OTHER_SEARCH" ? "Delhi" : city);
 
   // Strictness step: for Under 18, Over 60, or history of Heatstroke / Heat exhaustion
   const isVulnerable = isVulnerableUser(age, healthHistory);
@@ -66,10 +102,49 @@ export default function SafetyPlanCard() {
 
   const effectiveRiskLevel = reading.riskLevel;
 
-  // Staggered fill for hydration glass icons on load
-  const totalGlasses = 8;
-  const displayGlasses = reducedMotion ? totalGlasses : glassesFilled;
+  // Instant reactive local plan derived synchronously on EVERY render
+  const localAdvice = generateFallbackPlan({
+    city: displayCity,
+    age,
+    occupation,
+    sunHours,
+    healthHistory,
+    customHealthNote,
+    lang,
+    currentTemp: weatherData.currentTemp,
+    adjustedTemp: reading.adjusted,
+    riskLevel: effectiveRiskLevel
+  });
 
+  // Verify whether cached aiPlan matches active selections
+  const isAiPlanFresh =
+    aiPlan &&
+    aiPlan.source === "gemini" &&
+    aiPlan.appliedAge === age &&
+    aiPlan.appliedOccupation === occupation &&
+    aiPlan.appliedSunHours === sunHours;
+
+  const activeAgeAdvice = isAiPlanFresh && aiPlan.ageAdvice ? aiPlan.ageAdvice : localAdvice.ageAdvice;
+  const activeOccupationAdvice = isAiPlanFresh && aiPlan.occupationAdvice ? aiPlan.occupationAdvice : localAdvice.occupationAdvice;
+  const activeSunAdvice = isAiPlanFresh && aiPlan.sunExposureAdvice ? aiPlan.sunExposureAdvice : localAdvice.sunExposureAdvice;
+  const activeHealthAdvices = isAiPlanFresh && aiPlan.healthAdvice && aiPlan.healthAdvice.length > 0 ? aiPlan.healthAdvice : localAdvice.healthAdvice;
+
+  // Dynamic hydration schedule based on Sun Hours & Occupation
+  const baseGlasses = sunHours === "More than 6 hours" ? 16 : sunHours === "2 to 6 hours" ? 12 : 8;
+  const isHighExertionJob = occupation === "Delivery Driver" || occupation === "Farmer" || occupation === "Traffic Police";
+  const totalGlasses = isHighExertionJob ? baseGlasses + 2 : baseGlasses;
+  const targetLiters = (totalGlasses * 0.25).toFixed(1);
+
+  const hydrationIntervalText =
+    sunHours === "More than 6 hours"
+      ? (lang === "hi" ? `हर 15-20 मिनट में 250ml + ओआरएस (${targetLiters}L लक्ष्य)` : `Drink 250ml every 15–20 mins + ORS (${targetLiters}L target)`)
+      : sunHours === "2 to 6 hours"
+      ? (lang === "hi" ? `हर 30 मिनट में 250ml (${targetLiters}L लक्ष्य)` : `Drink 250ml every 30 mins (${targetLiters}L target)`)
+      : (lang === "hi" ? `हर 45 मिनट में 250ml (${targetLiters}L लक्ष्य)` : `Drink 250ml every 45 mins (${targetLiters}L target)`);
+
+  const displayGlasses = reducedMotion ? totalGlasses : Math.min(glassesFilled, totalGlasses);
+
+  // Staggered fill for hydration glass icons on load or when totalGlasses changes
   useEffect(() => {
     if (reducedMotion) return;
 
@@ -78,11 +153,11 @@ export default function SafetyPlanCard() {
       timers.push(
         setTimeout(() => {
           setGlassesFilled(i);
-        }, i * 150)
+        }, i * 90)
       );
     }
     return () => timers.forEach(clearTimeout);
-  }, [reducedMotion]);
+  }, [totalGlasses, reducedMotion]);
 
   // Fetch AI plan from server-side /api/plan route with graceful fallback
   useEffect(() => {
@@ -95,7 +170,7 @@ export default function SafetyPlanCard() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            city,
+            city: displayCity,
             age,
             occupation,
             sunHours,
@@ -127,143 +202,64 @@ export default function SafetyPlanCard() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [age, occupation, sunHours, healthHistory, customHealthNote, lang, city, reading.adjusted, effectiveRiskLevel, weatherData.currentTemp]);
+  }, [age, occupation, sunHours, healthHistory, customHealthNote, lang, displayCity, reading.adjusted, effectiveRiskLevel, weatherData.currentTemp]);
 
-  // Specific guidance text by age (uses AI plan if present, else clinical fallback)
-  const getAgeAdvice = () => {
-    if (aiPlan?.ageAdvice) return aiPlan.ageAdvice;
-    if (lang === "hi") {
-      if (age === "Under 18")
-        return "धूप में कम समय रहें, हर 30 मिनट में छांव लें, बड़ों की देखरेख में खेलें और पार्क किए वाहन में कभी न बैठें।";
-      if (age === "46 to 60")
-        return "हर 45 मिनट में आराम करें, प्यास लगने से पहले पानी पिएं और दोपहर के घंटों से बचें।";
-      if (age === "Over 60")
-        return "तेज धूप में बाहर न निकलें, ठंडे कमरे में रहें, नियमित दवाओं के बारे में डॉक्टर से सलाह लें और ओआरएस पास रखें।";
-      return "नियमित अंतराल पर पानी पिएं और शरीर को थकावट से बचाएं।";
-    }
-    if (age === "Under 18")
-      return "Shorter time outdoors, shade breaks every 30 minutes, adult supervision for sports, drink before thirsty, and never stay in a parked vehicle.";
-    if (age === "46 to 60")
-      return "Rest breaks about every 45 minutes, start drinking earlier in the day, and avoid peak afternoon heat.";
-    if (age === "Over 60")
-      return "Avoid peak hours, rest in a cool space, keep ORS handy, have someone check in, and verify medications with your doctor.";
-    return "Standard heat precautions: pace yourself and maintain steady fluid intake.";
-  };
-
-  // Specific guidance text by occupation (uses AI plan if present, else practical fallback)
-  const getOccupationAdvice = () => {
-    if (aiPlan?.occupationAdvice) return aiPlan.occupationAdvice;
-    if (lang === "hi") {
-      if (occupation === "Delivery Driver")
-        return "हवादार हेलमेट पहनें, लंबी सवारी दोपहर बाद करें, और दो ऑर्डर के बीच छांव में सुस्ताएं।";
-      if (occupation === "Student")
-        return "पानी की बोतल साथ रखें, दोपहर में खेलकूद या तेज धूप में खड़े रहने से बचें और टोपी पहनें।";
-      if (occupation === "Farmer")
-        return "काम जल्दी भोर में शुरू करें, सिर व गर्दन ढक कर रखें, दोपहर में आराम करें और खेत में पानी रखें।";
-      if (occupation === "Traffic Police")
-        return "चौराहे पर बारी-बारी से छांव लें, ऑन-ड्यूटी पानी पिएं और सांस लेने योग्य कपड़े पहनें।";
-      if (occupation === "Office Worker")
-        return "आवाजाही के समय सावधानी बरतें, एसी में भी पानी पीते रहें और अचानक तेज धूप में निकलने से बचें।";
-      return "नियमित पेयजल और धूप से बचाव का ध्यान रखें।";
-    }
-    if (occupation === "Delivery Driver")
-      return "Use a vented helmet, plan longer deliveries outside peak heat, and rest in shade between orders.";
-    if (occupation === "Student")
-      return "Carry a water bottle, avoid sports under direct midday sun, and wear a brimmed cap.";
-    if (occupation === "Farmer")
-      return "Start early and pause before peak noon heat, cover head and neck, and keep drinking water in the field.";
-    if (occupation === "Traffic Police")
-      return "Rotate shade breaks at the junction, carry water on duty, and use breathable reflective gear.";
-    if (occupation === "Office Worker")
-      return "Take care during midday commutes, stay hydrated indoors in air conditioning, and avoid abrupt hot/cold transitions.";
-    return "Ensure regular hydration and limit unnecessary outdoor exposure.";
-  };
-
-  // Specific guidance text by health condition
-  const getHealthAdvice = () => {
-    const list: string[] = [];
-    if (healthHistory.includes("heatstroke") || healthHistory.includes("exhaustion")) {
-      list.push(
-        lang === "hi"
-          ? "लू का पिछला इतिहास होने से सहनशीलता कम होती है, गर्मी में ज्यादा जोर न लगाएं और तुरंत रुकें।"
-          : "History of heat illness causes lower tolerance, avoid heavy exertion and cool down at first symptoms."
-      );
-    }
-    if (healthHistory.includes("migraine")) {
-      list.push(
-        lang === "hi"
-          ? "धूप, चकाचौंध और पानी की कमी से सिरदर्द बढ़ सकता है, धूप का चश्मा और पानी साथ रखें।"
-          : "Heat glare and dehydration can trigger migraine, wear sunglasses and drink fluids regularly."
-      );
-    }
-    if (healthHistory.includes("skin_infections")) {
-      list.push(
-        lang === "hi"
-          ? "त्वचा को ढकें, साफ व सूखा रखें, और पसीने वाले कपड़े तुरंत बदलें।"
-          : "Keep skin clean and dry, cover exposed areas, and change sweaty clothing promptly."
-      );
-    }
-    if (healthHistory.includes("fatigue")) {
-      list.push(
-        lang === "hi"
-          ? "काम के छोटे-छोटे हिस्से बनाएं, पर्याप्त आराम लें और इलेक्ट्रोलाइट्स पिएं।"
-          : "Shorter work intervals with frequent rest periods and electrolytes."
-      );
-    }
-    return list;
-  };
-
-  const healthAdvices =
-    aiPlan?.healthAdvice && aiPlan.healthAdvice.length > 0
-      ? aiPlan.healthAdvice
-      : getHealthAdvice();
-
-  // Chips summary
+  // Comprehensive profile summary chips
   const summaryChips = [
-    occupation && occupation !== "Not specified" ? occupation : null,
-    age ? `Age: ${age}` : null,
+    `📍 ${displayCity}`,
+    occupation && occupation !== "Not specified" ? `💼 ${occupation}` : null,
+    age ? `👤 Age: ${age}` : null,
+    sunHours ? `☀️ Sun: ${sunHours}` : null,
     healthHistory.includes("heatstroke") ? "Heatstroke history" : null,
     healthHistory.includes("exhaustion") ? "Heat exhaustion" : null,
     healthHistory.includes("migraine") ? "Migraine" : null,
     healthHistory.includes("skin_infections") ? "Skin care" : null,
-    healthHistory.includes("fatigue") ? "Fatigue" : null
+    healthHistory.includes("fatigue") ? "Physical fatigue" : null,
+    customHealthNote.trim() ? `Note: "${customHealthNote.trim().slice(0, 25)}..."` : null
   ].filter(Boolean) as string[];
 
   const planSpeechText =
     lang === "hi"
-      ? `आपकी दैनिक हीट सुरक्षा योजना। वर्तमान हीट स्तर: ${effectiveRiskLevel}, अनुमानित तापमान ${reading.adjusted} डिग्री सेल्सियस। ${
+      ? `आपकी दैनिक हीट सुरक्षा योजना, शहर ${displayCity} के लिए। वर्तमान हीट स्तर: ${effectiveRiskLevel}, अनुमानित तापमान ${reading.adjusted} डिग्री सेल्सियस। धूप में रहने का समय: ${sunHours}। ${
           saferRanges.length > 0
             ? `बाहर निकलने का सुरक्षित समय: ${saferRanges.join(", ")}।`
             : "सुबह 8 बजे से पहले ही बाहर निकलें।"
         } ${
           avoidRanges.length > 0 ? `दोपहर की तेज धूप से बचें: ${avoidRanges.join(", ")}।` : ""
-        } जलपान अनुसूची: हर 30 मिनट में 250 मिलीलीटर पानी पिएं। ${
-          age ? `उम्र ${age} के लिए सलाह: ${getAgeAdvice()}` : ""
+        } जलपान अनुसूची: ${hydrationIntervalText}। ${
+          age ? `उम्र ${age} के लिए सलाह: ${activeAgeAdvice}` : ""
         } ${
           occupation && occupation !== "Not specified"
-            ? `व्यवसाय ${occupation} के लिए सलाह: ${getOccupationAdvice()}`
+            ? `व्यवसाय ${occupation} के लिए सलाह: ${activeOccupationAdvice}`
             : ""
         } ${
-          healthAdvices.length > 0 ? `स्वास्थ्य सलाह: ${healthAdvices.join(" ")}` : ""
+          activeSunAdvice ? `धूप से बचाव: ${activeSunAdvice}` : ""
+        } ${
+          activeHealthAdvices.length > 0 ? `स्वास्थ्य सलाह: ${activeHealthAdvices.join(" ")}` : ""
         }`.slice(0, 1400)
-      : `Your Daily Heat Safety Plan. Current heat level: ${effectiveRiskLevel}, with an adjusted feels-like temperature of ${reading.adjusted} degrees Celsius. ${
+      : `Your Daily Heat Safety Plan for ${displayCity}. Current heat level: ${effectiveRiskLevel}, with an adjusted feels-like temperature of ${reading.adjusted} degrees Celsius. Sun exposure: ${sunHours}. ${
           saferRanges.length > 0
             ? `Safest outdoor windows are: ${saferRanges.join(", ")}.`
             : "Prefer early morning hours before 8 AM."
         } ${
           avoidRanges.length > 0 ? `Avoid peak afternoon exposure: ${avoidRanges.join(", ")}.` : ""
-        } Hydration schedule: drink 250 milliliters of water every 30 minutes. ${
-          age ? `Advice for age ${age}: ${getAgeAdvice()}` : ""
+        } Hydration schedule: ${hydrationIntervalText}. ${
+          age ? `Advice for age ${age}: ${activeAgeAdvice}` : ""
         } ${
           occupation && occupation !== "Not specified"
-            ? `Advice for ${occupation}: ${getOccupationAdvice()}`
+            ? `Advice for ${occupation}: ${activeOccupationAdvice}`
             : ""
         } ${
-          healthAdvices.length > 0 ? `Health considerations: ${healthAdvices.join(" ")}` : ""
+          activeSunAdvice ? `Sun protection: ${activeSunAdvice}` : ""
+        } ${
+          activeHealthAdvices.length > 0 ? `Health considerations: ${activeHealthAdvices.join(" ")}` : ""
         }`.slice(0, 1400);
 
   return (
-    <div className="w-full bg-[#FFFAF4] border border-[#1E2A44]/15 rounded-[22px] p-5 sm:p-6 card-shadow animate-fade-rise-2 flex flex-col gap-4">
+    <div
+      id="safety-plan-card"
+      className="w-full bg-[#FFFAF4] border border-[#1E2A44]/15 rounded-[22px] p-5 sm:p-6 card-shadow animate-fade-rise-2 flex flex-col gap-4 transition-all duration-500"
+    >
       {/* Phone-style Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#1E2A44]/10">
         <div className="flex items-center gap-2">
@@ -274,9 +270,14 @@ export default function SafetyPlanCard() {
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2.4} />
           </button>
-          <span className="font-extrabold text-sm sm:text-base text-[#1E2A44]">
-            {t.planCard.title}
-          </span>
+          <div className="flex flex-col">
+            <span className="font-extrabold text-sm sm:text-base text-[#1E2A44] leading-tight">
+              {t.planCard.title}
+            </span>
+            <span className="text-[11px] font-bold text-[#F47A1F]">
+              📍 {displayCity} · {weatherData.currentTemp}°C {weatherData.isLive ? "(Live Weather)" : ""}
+            </span>
+          </div>
         </div>
 
         {/* Audio Listen Button & EN / HI toggle */}
@@ -337,7 +338,7 @@ export default function SafetyPlanCard() {
       {/* 4 Tinted Sections */}
       <div className="flex flex-col gap-3">
         {/* Section 1: Red Tint Current Heat Level */}
-        <div className="bg-[#FDECEA] border border-[#D92D20]/20 rounded-xl p-3 flex flex-col gap-1">
+        <div className="bg-[#FDECEA] border border-[#D92D20]/20 rounded-xl p-3 flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold text-[#D92D20]">
               {t.planCard.currentHeatLevel}
@@ -355,9 +356,20 @@ export default function SafetyPlanCard() {
           </div>
           <p className="text-xs font-semibold text-[#1E2A44] leading-tight">
             {lang === "hi"
-              ? `समायोजित तापमान ${reading.adjusted}°C है। सीधी धूप और भारी श्रम से बचें।`
-              : `Adjusted heat index is ${reading.adjusted}°C. Limit strenuous outdoor work and direct exposure.`}
+              ? `समायोजित तापमान ${reading.adjusted}°C है (${displayCity})। सीधी धूप और भारी श्रम से बचें।`
+              : `Adjusted heat index is ${reading.adjusted}°C for ${displayCity}. Limit strenuous outdoor work and direct exposure.`}
           </p>
+
+          {/* Formula breakdown showing exact effect of Sun Hours, UV, and apparent temp */}
+          <div className="flex items-center flex-wrap gap-1.5 text-[10px] font-bold text-[#5B6577] bg-[#FFFAF4]/90 px-2.5 py-1.5 rounded-lg border border-[#D92D20]/15">
+            <span>Feels: {reading.rawFeelsLike}°C</span>
+            <span>+</span>
+            <span className="text-[#F47A1F]">UV {reading.uv} (+{reading.uvOff}°C)</span>
+            <span>+</span>
+            <span className="text-[#D92D20]">Sun ({sunHours}): +{reading.expOff}°C</span>
+            <span>=</span>
+            <span className="text-[#1E2A44] font-black">{reading.adjusted}°C Adjusted</span>
+          </div>
         </div>
 
         {/* Section 2: Green Tint Best Time to Go Out */}
@@ -383,6 +395,14 @@ export default function SafetyPlanCard() {
               </span>
             </div>
           )}
+
+          {/* Occupation shift guidance */}
+          {occupation && occupation !== "Not specified" && (
+            <div className="text-[11px] font-medium text-[#1E2A44] bg-[#FFFAF4]/90 p-2 rounded-lg border border-[#2E9E5B]/20 mt-1">
+              <span className="font-bold text-[#2E9E5B]">{occupation} Shift Advice: </span>
+              <span>{getOccupationShiftTip(occupation, lang)}</span>
+            </div>
+          )}
         </div>
 
         {/* Section 3: Blue Tint Hydration Schedule */}
@@ -392,25 +412,25 @@ export default function SafetyPlanCard() {
               {t.planCard.hydrationSchedule}
             </span>
             <span className="text-[11px] font-bold text-[#1E2A44]">
-              {t.planCard.hydrationInterval}
+              {hydrationIntervalText}
             </span>
           </div>
 
-          {/* Row of small glass icons by hour (filling one after another on load) */}
-          <div className="flex items-center justify-between gap-1 pt-1">
+          {/* Dynamic glass icons reflecting sunHours and occupation */}
+          <div className="flex items-center flex-wrap gap-1.5 pt-1">
             {Array.from({ length: totalGlasses }).map((_, idx) => {
               const isFilled = idx < displayGlasses;
               return (
                 <div
                   key={idx}
-                  title={`Glass ${idx + 1}`}
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                  title={`Glass ${idx + 1} (250ml)`}
+                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-all duration-300 ${
                     isFilled
                       ? "bg-[#2F7FD1] text-[#FFFAF4] scale-100 shadow-sm"
                       : "bg-[#2F7FD1]/15 text-[#2F7FD1]/40 scale-95"
                   }`}
                 >
-                  <HugeiconsIcon icon={GlassWaterIcon} size={14} strokeWidth={2.2} />
+                  <HugeiconsIcon icon={GlassWaterIcon} size={13} strokeWidth={2.2} />
                 </div>
               );
             })}
@@ -429,7 +449,7 @@ export default function SafetyPlanCard() {
           </ul>
 
           {/* "For you" personalized tips section */}
-          <div className="mt-1 pt-2 border-t border-[#F47A1F]/20 flex flex-col gap-1">
+          <div className="mt-1 pt-2 border-t border-[#F47A1F]/20 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-extrabold text-[#1E2A44]">
                 {t.planCard.forYouTitle}:
@@ -450,19 +470,39 @@ export default function SafetyPlanCard() {
                   : "Clinical Protocols"}
               </span>
             </div>
+
+            {/* Age Advice */}
             <p className="text-[11px] text-[#1E2A44] leading-relaxed">
-              • <span className="font-semibold">{age}:</span> {getAgeAdvice()}
+              • <span className="font-semibold">{age}:</span> {activeAgeAdvice}
             </p>
+
+            {/* Occupation Advice */}
             {occupation && occupation !== "Not specified" && (
               <p className="text-[11px] text-[#1E2A44] leading-relaxed">
-                • <span className="font-semibold">{occupation}:</span> {getOccupationAdvice()}
+                • <span className="font-semibold">{occupation}:</span> {activeOccupationAdvice}
               </p>
             )}
-            {healthAdvices.map((adv, idx) => (
+
+            {/* Sun Exposure Advice */}
+            {activeSunAdvice && (
+              <p className="text-[11px] text-[#1E2A44] leading-relaxed">
+                • <span className="font-semibold">Sun Exposure ({sunHours}):</span> {activeSunAdvice}
+              </p>
+            )}
+
+            {/* Health Conditions Advice */}
+            {activeHealthAdvices.map((adv, idx) => (
               <p key={idx} className="text-[11px] text-[#1E2A44] leading-relaxed">
                 • <span className="font-semibold">Health:</span> {adv}
               </p>
             ))}
+
+            {/* Custom Health Note if provided */}
+            {customHealthNote.trim() && (
+              <p className="text-[11px] text-[#1E2A44] leading-relaxed bg-[#FFFAF4]/80 p-1.5 rounded-md border border-[#F47A1F]/20">
+                • <span className="font-semibold">Personal Note:</span> &ldquo;{customHealthNote.trim()}&rdquo; &mdash; Pace activity accordingly.
+              </p>
+            )}
           </div>
         </div>
       </div>
