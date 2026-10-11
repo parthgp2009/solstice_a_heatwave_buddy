@@ -10,6 +10,8 @@ import {
   DEFAULT_WEATHER_DATA,
   fetchOpenMeteoWeather
 } from "@/lib/weather";
+import type { User } from "@supabase/supabase-js";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export interface AppState {
   lang: Language;
@@ -57,6 +59,12 @@ export interface AppState {
 
   planSubmitted: boolean;
   setPlanSubmitted: (submitted: boolean) => void;
+
+  // Supabase Auth state (Rule 19: zero health data stored or attached)
+  user: User | null;
+  isAuthLoading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const STORAGE_KEY = "heatwave_buddy_local_state_v1";
@@ -79,6 +87,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [selectedCityCoords, setSelectedCityCoords] = useState<Coordinates | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherData>(DEFAULT_WEATHER_DATA);
   const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => isSupabaseConfigured());
 
   // Live weather fetch on city or selected coordinates change
   useEffect(() => {
@@ -117,6 +127,83 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       isCancelled = true;
     };
   }, [city, selectedCityCoords]);
+
+  // Supabase Auth listener (initial session + real-time changes)
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) {
+      return;
+    }
+
+    let isMounted = true;
+
+    // 1. Check existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isMounted) {
+        setUser(session?.user ?? null);
+        setIsAuthLoading(false);
+      }
+    });
+
+    // 2. Listen to real-time auth changes
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMounted) {
+        setUser(session?.user ?? null);
+        setIsAuthLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signInWithGoogle = async () => {
+    if (!isSupabaseConfigured()) {
+      alert(
+        lang === "hi"
+          ? "गूगल साइन-इन के लिए .env.local में Supabase सेटिंग्स आवश्यक हैं।"
+          : "Supabase credentials are not configured yet in .env.local. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable Google Sign-In."
+      );
+      return;
+    }
+
+    const supabase = createClient();
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      if (error) {
+        console.error("Supabase OAuth error:", error.message);
+        alert(error.message);
+      }
+    } catch (err) {
+      console.error("Sign in failed:", err);
+    }
+  };
+
+  const signOut = async () => {
+    const supabase = createClient();
+    if (!supabase) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
+  };
 
   // Load from localStorage only if rememberDevice was previously turned on AND not under 18
   useEffect(() => {
@@ -224,7 +311,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         weatherData,
         isLoadingWeather,
         selectedCityCoords,
-        setSelectedCityCoords
+        setSelectedCityCoords,
+        user,
+        isAuthLoading,
+        signInWithGoogle,
+        signOut
       }}
     >
       {children}

@@ -13,6 +13,8 @@ export interface TranslationDictionary {
     weather: string;
     faqs: string;
     signIn: string;
+    signOut: string;
+    signedInAs: string;
   };
   planBuilder: {
     title: string;
@@ -81,6 +83,8 @@ export const DICTIONARY: Record<Language, TranslationDictionary> = {
       weather: "Live Weather",
       faqs: "FAQs",
       signIn: "Sign in with Google",
+      signOut: "Sign Out",
+      signedInAs: "Signed in as",
     },
     planBuilder: {
       title: "Build Your Safety Plan",
@@ -152,6 +156,8 @@ export const DICTIONARY: Record<Language, TranslationDictionary> = {
       weather: "लाइव मौसम",
       faqs: "अक्सर पूछे जाने वाले सवाल",
       signIn: "गूगल से साइन इन करें",
+      signOut: "साइन आउट",
+      signedInAs: "इस खाते से लॉगिन हैं",
     },
     planBuilder: {
       title: "अपनी सुरक्षा योजना बनाएं",
