@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
 export const ALLOWED_CITIES = [
   "Delhi",
@@ -40,7 +41,14 @@ export const PreferencesUpdateSchema = z
   })
   .strict();
 
-export async function GET() {
+export async function GET(request?: Request) {
+  // Rate limiting (20 requests per minute)
+  const ip = request ? getClientIp(request) : "127.0.0.1";
+  const rateLimit = checkRateLimit("preferences", ip, 20, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
@@ -78,6 +86,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Rate limiting (20 requests per minute)
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit("preferences", ip, 20, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
@@ -142,7 +157,14 @@ export async function POST(request: Request) {
   return NextResponse.json({ success: true, preferences: data });
 }
 
-export async function DELETE() {
+export async function DELETE(request?: Request) {
+  // Rate limiting (20 requests per minute)
+  const ip = request ? getClientIp(request) : "127.0.0.1";
+  const rateLimit = checkRateLimit("preferences", ip, 20, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });

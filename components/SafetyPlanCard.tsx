@@ -191,9 +191,17 @@ export default function SafetyPlanCard() {
           if (!cancelled) {
             setAiPlan(data);
           }
+        } else {
+          // Graceful fallback on 429 rate limit or server error -> use rule-based plan
+          if (!cancelled) {
+            setAiPlan(null);
+          }
         }
       } catch {
         // Fallback remains active
+        if (!cancelled) {
+          setAiPlan(null);
+        }
       } finally {
         if (!cancelled) {
           setIsLoadingAiPlan(false);

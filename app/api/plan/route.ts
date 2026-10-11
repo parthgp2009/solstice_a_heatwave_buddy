@@ -1,54 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { PlanRequestInput, generateGeminiPlan } from "@/lib/aiPlan";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
-// In-memory rate limiting: map IP -> timestamps array
-const rateLimitMap = new Map<string, number[]>();
-const MAX_REQUESTS_PER_MINUTE = 30;
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+// Strict Zod schema enforcing fixed allowed values and maximum note length
+export const PlanInputSchema = z.object({
+  city: z.string().max(60).optional().default("Delhi"),
+  age: z
+    .enum(["Under 18", "18 to 30", "31 to 45", "46 to 60", "Over 60"])
+    .optional()
+    .default("31 to 45"),
+  occupation: z
+    .enum([
+      "Not specified",
+      "Delivery Driver",
+      "Student",
+      "Farmer",
+      "Traffic Police",
+      "Office Worker"
+    ])
+    .optional()
+    .default("Not specified"),
+  sunHours: z
+    .enum(["Up to 2 hours", "2 to 6 hours", "More than 6 hours"])
+    .optional()
+    .default("2 to 6 hours"),
+  healthHistory: z.array(z.string().max(40)).max(10).optional().default([]),
+  customHealthNote: z.string().max(80, "Typed note cannot exceed 80 characters.").optional().default(""),
+  lang: z.enum(["en", "hi"]).optional().default("en"),
+  currentTemp: z.number().min(-30).max(70).optional().default(38),
+  adjustedTemp: z.number().min(-30).max(85).optional().default(42),
+  riskLevel: z.enum(["Low", "Caution", "Danger", "Extreme"]).optional().default("Danger")
+});
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Rate limiting by client IP
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
-    const now = Date.now();
-    const timestamps = (rateLimitMap.get(ip) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    // 1. In-memory rate limiting by client IP (20 requests per minute)
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit("plan", ip, 20, 60 * 1000);
 
-    if (timestamps.length >= MAX_REQUESTS_PER_MINUTE) {
-      return NextResponse.json(
-        { error: "Too many plan requests. Please wait a minute before updating your plan." },
-        { status: 429 }
-      );
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit.retryAfterSeconds);
     }
-    timestamps.push(now);
-    rateLimitMap.set(ip, timestamps);
 
-    // 2. Parse and validate request body
-    const body = (await req.json().catch(() => null)) as Partial<PlanRequestInput> | null;
+    // 2. Parse and validate request body with Zod
+    const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    // Input sanitization (Zero storage: values are never persisted or logged per rules.md)
-    const sanitizedInput: PlanRequestInput = {
-      city: typeof body.city === "string" ? body.city.slice(0, 50) : "Delhi",
-      age: typeof body.age === "string" ? body.age.slice(0, 30) : "31 to 45",
-      occupation: typeof body.occupation === "string" ? body.occupation.slice(0, 50) : "Not specified",
-      sunHours: typeof body.sunHours === "string" ? body.sunHours.slice(0, 30) : "2 to 6 hours",
-      healthHistory: Array.isArray(body.healthHistory)
-        ? body.healthHistory.map(h => String(h).slice(0, 30))
-        : [],
-      customHealthNote: typeof body.customHealthNote === "string"
-        ? body.customHealthNote.slice(0, 100)
-        : "",
-      lang: body.lang === "hi" ? "hi" : "en",
-      currentTemp: typeof body.currentTemp === "number" ? body.currentTemp : 38,
-      adjustedTemp: typeof body.adjustedTemp === "number" ? body.adjustedTemp : 42,
-      riskLevel: typeof body.riskLevel === "string" ? body.riskLevel.slice(0, 20) : "Danger"
-    };
+    const parseResult = PlanInputSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: parseResult.error.issues.map(i => ({
+            field: i.path.join("."),
+            message: i.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
 
-    // 3. Generate plan via Gemini or robust fallback
+    const validated: PlanRequestInput = parseResult.data;
+
+    // 3. Generate plan via Gemini or robust rule-based fallback
     const apiKey = process.env.GEMINI_API_KEY || "";
-    const result = await generateGeminiPlan(sanitizedInput, apiKey);
+    const result = await generateGeminiPlan(validated, apiKey);
 
     return NextResponse.json(result, {
       status: 200,

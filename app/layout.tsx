@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
+import Providers from "@/components/Providers";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -17,11 +18,32 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: "Solstice: Heatwave Buddy | Real-Time Personalised Heat Safety",
-  description: "Live temperature, adjusted feels-like, and personalised heat safety plans for India.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  title: "Solstice: Heatwave Buddy",
+  description: "Live temperature, adjusted feels-like index, and personalised heat safety plans for India.",
+  openGraph: {
+    title: "Solstice: Heatwave Buddy",
+    description: "Live temperature, adjusted feels-like index, and personalised heat safety plans for India.",
+    url: "/",
+    siteName: "Solstice: Heatwave Buddy",
+    locale: "en_IN",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Solstice: Heatwave Buddy - Real-Time Heat Safety",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Solstice: Heatwave Buddy",
+    description: "Live temperature, adjusted feels-like index, and personalised heat safety plans for India.",
+    images: ["/og-image.png"],
+  },
 };
-
-import Providers from "@/components/Providers";
 
 export default function RootLayout({
   children,

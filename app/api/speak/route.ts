@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
-// In-memory rate limiting: map IP -> timestamps array
-const rateLimitMap = new Map<string, number[]>();
-const MAX_REQUESTS_PER_MINUTE = 15;
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const ALLOWED_LANGUAGES = ["hi-IN", "en-IN"] as const;
+type AllowedLanguage = (typeof ALLOWED_LANGUAGES)[number];
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Rate limiting by client IP
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
-    const now = Date.now();
-    const timestamps = (rateLimitMap.get(ip) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    // 1. In-memory rate limiting by client IP (20 requests per minute)
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit("speak", ip, 20, 60 * 1000);
 
-    if (timestamps.length >= MAX_REQUESTS_PER_MINUTE) {
-      return NextResponse.json(
-        { error: "Too many requests. Please wait a minute before requesting more audio." },
-        { status: 429 }
-      );
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit.retryAfterSeconds);
     }
-    timestamps.push(now);
-    rateLimitMap.set(ip, timestamps);
 
-    // 2. Parse and validate input text
+    // 2. Parse and validate input text & language
     const body = await req.json().catch(() => null);
-    if (!body || typeof body.text !== "string") {
-      return NextResponse.json({ error: "Missing 'text' parameter in request body." }, { status: 400 });
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    if (typeof body.text !== "string") {
+      return NextResponse.json(
+        { error: "Missing or invalid 'text' parameter in request body." },
+        { status: 400 }
+      );
     }
 
     const text = body.text.trim();
@@ -33,13 +33,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Text cannot be empty." }, { status: 400 });
     }
 
-    // Safety rule: max 1500 characters
-    if (text.length > 1500) {
+    // Safe maximum character length limit (3000 characters)
+    if (text.length > 3000) {
       return NextResponse.json(
-        { error: `Text too long (${text.length} chars). Maximum allowed is 1500 characters.` },
+        { error: `Text too long (${text.length} chars). Maximum allowed is 3000 characters.` },
         { status: 400 }
       );
     }
+
+    // Accept only languages hi-IN and en-IN (normalizing shorthand 'hi' / 'en' if provided)
+    let rawLang = typeof body.lang === "string" ? body.lang.trim() : "en-IN";
+    if (rawLang === "hi") rawLang = "hi-IN";
+    if (rawLang === "en") rawLang = "en-IN";
+
+    if (!ALLOWED_LANGUAGES.includes(rawLang as AllowedLanguage)) {
+      return NextResponse.json(
+        {
+          error: "Invalid language. Allowed languages are 'hi-IN' and 'en-IN'."
+        },
+        { status: 400 }
+      );
+    }
+    const validatedLang: AllowedLanguage = rawLang as AllowedLanguage;
 
     // 3. Check for AWS credentials with MY_ prefix (Rules 5, 6, 7)
     const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID;
@@ -63,12 +78,11 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // 5. Build SynthesizeSpeechCommand using Kajal Neural voice (Rule 9)
-    // Kajal is AWS Polly's bilingual Hindi and Indian English Neural voice
+    // 5. Synthesize speech using Kajal Neural voice (Rule 9)
     const command = new SynthesizeSpeechCommand({
       Engine: "neural",
       VoiceId: "Kajal",
-      LanguageCode: body.lang === "hi" ? "hi-IN" : "en-IN",
+      LanguageCode: validatedLang,
       OutputFormat: "mp3",
       Text: text,
       TextType: "text"

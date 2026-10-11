@@ -93,12 +93,13 @@ export default function AudioListenButton({
 
     try {
       // 1. Try server-side Amazon Polly first
+      const normalizedLang = lang === "hi" ? "hi-IN" : "en-IN";
       const response = await fetch("/api/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: textToSpeak.slice(0, 1500),
-          lang
+          text: textToSpeak.slice(0, 3000),
+          lang: normalizedLang
         })
       });
 
@@ -135,10 +136,10 @@ export default function AudioListenButton({
         return;
       }
     } catch {
-      // Polly route unavailable -> use browser fallback
+      // Polly route unavailable or rate-limited -> gracefully fallback to browser speech
     }
 
-    // 2. Fallback to browser Web Speech API (Rule 9)
+    // 2. Fallback to browser Web Speech API (Rule 9 / Requirement 1 fallback)
     fallbackToBrowserSpeech();
   };
 
