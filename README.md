@@ -13,13 +13,16 @@
 India experiences severe and prolonged heatwaves during the pre-monsoon and summer months, with summer temperatures regularly exceeding 40°C to 45°C across large parts of the country. High ambient heat combined with solar radiation and humidity creates dangerous physiological stress.
 
 ### Populations Most at Risk
+
 - **Outdoor & Gig Workers:** Delivery riders, agricultural workers, construction laborers, and traffic police who perform sustained physical labor under direct sunlight and cannot retreat indoors during peak solar hours.
 - **Elderly People (Over 60):** Aging reduces the body's natural thermoregulatory efficiency and thirst sensation, compounded by cardiovascular conditions and routine medications.
 - **Children & Youth (Under 18):** Minors produce more metabolic heat relative to body surface area and dehydrate more rapidly during outdoor school commutes and sports.
 - **Individuals with Past Heat Illness:** People who have previously experienced heat exhaustion or heatstroke have compromised physiological heat tolerance and face a heightened risk of recurrence.
 
 ### Why Generic Temperature Alerts Are Not Enough
+
 Standard weather reports and broadcast alerts quote only ambient shade temperatures (e.g., "38°C today in Delhi"). This single number fails to account for:
+
 1. **Solar UV Radiation:** Direct radiant heating from high solar ultraviolet radiation elevates heat absorption significantly.
 2. **Cumulative Exposure:** Spending 30 minutes outdoors versus 6 hours under the sun creates entirely different thermal burdens on the body.
 3. **Physical Exertion:** Heavy physical labor generates internal metabolic heat that drastically accelerates heat strain compared to rest.
@@ -99,6 +102,7 @@ Solstice: Heatwave Buddy integrates AWS specifically for high-quality, bilingual
 
 - **Least-Privilege IAM User:**
   The AWS IAM user identity used by the application is locked down strictly to a single action:
+
   ```json
   {
     "Version": "2012-10-17",
@@ -111,6 +115,7 @@ Solstice: Heatwave Buddy integrates AWS specifically for high-quality, bilingual
     ]
   }
   ```
+
   The IAM credentials have no access to any other AWS resource or administrative privilege.
 
 - **AWS Budget Alert:**
@@ -169,6 +174,7 @@ Solstice: Heatwave Buddy integrates AWS specifically for high-quality, bilingual
 Solstice: Heatwave Buddy is built around strict zero-storage principles for personal and health data:
 
 ### What Is NEVER Stored or Logged
+
 - **GPS Coordinates:** When location access is granted, latitude and longitude are processed in volatile browser memory solely to query weather data from Open-Meteo. Coordinates are never saved to a database, written to disk, or logged.
 - **Exact Age & Date of Birth:** The application never requests or records exact dates of birth or numerical ages.
 - **Health Conditions & Medical History:** Checkbox selections (heatstroke history, heat exhaustion, migraines, fatigue) are processed only in volatile memory to compute the safety plan and are never sent to a database or logged on a server.
@@ -176,7 +182,9 @@ Solstice: Heatwave Buddy is built around strict zero-storage principles for pers
 - **Minors Under 18:** If a user selects "Under 18", both cloud synchronization and local storage persistence are strictly disabled. The database schema enforces this through a SQL `CHECK` constraint that rejects records for users under 18.
 
 ### What Is Stored ONLY if the User Opts In (Google Sign-In)
+
 If a user explicitly chooses to sign in with Google to sync preferences across sessions, Supabase stores only:
+
 - Default city
 - Favorite cities list
 - Occupation
@@ -184,6 +192,7 @@ If a user explicitly chooses to sign in with Google to sync preferences across s
 - Preferred language (`en` or `hi`)
 
 ### Database Security
+
 - Every table in Supabase has **Row Level Security (RLS)** enabled.
 - Access policies restrict reads, inserts, updates, and deletions so authenticated users can interact exclusively with their own row (`auth.uid() = id`).
 - Service role keys are never exposed to the frontend.
@@ -224,27 +233,33 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ## 8. Getting Started Locally
 
 ### Prerequisites
+
 - Node.js 20+
 - npm or yarn
 
 ### Installation
+
 ```bash
 # Clone the repository
-git clone https://github.com/parthgp2009/mysite.git
-cd mysite
+git clone https://github.com/parthgp2009/solstice_a_heatwave_buddy.git
+cd solstice_a_heatwave_buddy
 
 # Install dependencies
 npm install
 ```
 
 ### Configure Environment
+
 Create a `.env.local` file in the project root:
+
 ```bash
 cp .env.example .env.local
 ```
+
 Add your respective keys for Google Gemini, AWS Polly, and Supabase (all services have built-in graceful fallbacks if omitted).
 
 ### Run the Application
+
 ```bash
 # Start local development server
 npm run dev
