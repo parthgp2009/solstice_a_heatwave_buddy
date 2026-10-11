@@ -219,6 +219,10 @@ function DevHeatModelPanelInner() {
 }
 
 export default function DevHeatModelPanel() {
+  if (process.env.NODE_ENV !== "development") {
+    return null;
+  }
+
   return (
     <Suspense fallback={null}>
       <DevHeatModelPanelInner />
