@@ -241,8 +241,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 ```bash
 # Clone the repository
-git clone https://github.com/parthgp2009/solstice_a_heatwave_buddy.git
-cd solstice_a_heatwave_buddy
+git clone https://github.com/parthgp2009/mysite.git
+cd mysite
 
 # Install dependencies
 npm install
