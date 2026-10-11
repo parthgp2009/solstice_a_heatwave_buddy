@@ -17,20 +17,25 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://solsitice-a-heat-wave-buddy.netlify.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(siteUrl),
   title: "Solstice: Heatwave Buddy",
   description: "Live temperature, adjusted feels-like index, and personalised heat safety plans for India.",
+  alternates: {
+    canonical: siteUrl,
+  },
   openGraph: {
     title: "Solstice: Heatwave Buddy",
     description: "Live temperature, adjusted feels-like index, and personalised heat safety plans for India.",
-    url: "/",
+    url: siteUrl,
     siteName: "Solstice: Heatwave Buddy",
     locale: "en_IN",
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: `${siteUrl}/og-image.png`,
         width: 1200,
         height: 630,
         alt: "Solstice: Heatwave Buddy - Real-Time Heat Safety",
@@ -41,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Solstice: Heatwave Buddy",
     description: "Live temperature, adjusted feels-like index, and personalised heat safety plans for India.",
-    images: ["/og-image.png"],
+    images: [`${siteUrl}/og-image.png`],
   },
 };
 
