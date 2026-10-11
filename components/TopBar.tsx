@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Menu01Icon, ArrowRight01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { Menu01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { useAppState } from "@/context/AppStateContext";
+import GlideSelect from "@/components/GlideSelect";
 
 /**
  * Clean inline Google "G" logo for the OAuth button.
@@ -37,20 +38,7 @@ function GoogleIcon() {
 export default function TopBar() {
   const { lang, setLang, t, user, isAuthLoading, signInWithGoogle, signOut } = useAppState();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-
-  // Close user dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setUserDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const navLinks = [
     { href: "/", label: t.nav.home },
@@ -60,15 +48,16 @@ export default function TopBar() {
     { href: "/faqs", label: t.nav.faqs }
   ];
 
-  // Derived user display details from Supabase auth session
-  const userDisplayName =
-    (user?.user_metadata?.full_name as string | undefined) ||
-    (user?.user_metadata?.name as string | undefined) ||
+  // Extract user's first name from Google metadata or email
+  const userFirstName =
+    (user?.user_metadata?.given_name as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    (user?.user_metadata?.name as string | undefined)?.split(" ")[0] ||
     user?.email?.split("@")[0] ||
-    "User";
+    (lang === "hi" ? "उपयोगकर्ता" : "User");
 
   const userAvatarUrl = (user?.user_metadata?.avatar_url || user?.user_metadata?.picture) as string | undefined;
-  const userInitial = (user?.email?.[0] || userDisplayName[0] || "U").toUpperCase();
+  const userInitial = (userFirstName[0] || user?.email?.[0] || "U").toUpperCase();
 
   return (
     <header className="relative z-30 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-3">
@@ -157,56 +146,51 @@ export default function TopBar() {
           {isAuthLoading ? (
             <div className="hidden sm:inline-flex w-28 h-8 bg-[#1E2A44]/10 rounded-xl animate-pulse" />
           ) : user ? (
-            <div className="relative hidden sm:block" ref={dropdownRef}>
+            <div className="hidden sm:flex items-center gap-2">
+              {/* User Avatar */}
+              {userAvatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={userAvatarUrl}
+                  alt={userFirstName}
+                  className="w-7 h-7 rounded-full object-cover border border-[#1E2A44]/15 shadow-xs"
+                />
+              ) : (
+                <span className="w-7 h-7 rounded-full bg-[#F47A1F] text-[#FFFAF4] flex items-center justify-center text-xs font-black shadow-xs">
+                  {userInitial}
+                </span>
+              )}
+
+              {/* GlideSelect user dropdown per Rule 18 */}
+              <GlideSelect
+                options={[
+                  { value: "user", label: userFirstName },
+                  { value: "signout", label: t.nav.signOut }
+                ]}
+                value="user"
+                onChange={(val) => {
+                  if (val === "signout") {
+                    signOut();
+                  }
+                }}
+                accentColor="#F47A1F"
+                surfaceColor="#FFFAF4"
+                highlightColor="#FBEBD9"
+                textColor="#1E2A44"
+                size="sm"
+                radius={12}
+                menuWidth={130}
+                ariaLabel={lang === "hi" ? "उपयोगकर्ता खाता मेनू" : "User account menu"}
+              />
+
+              {/* Direct Sign out button */}
               <button
                 type="button"
-                onClick={() => setUserDropdownOpen(prev => !prev)}
-                className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs font-bold text-[#1E2A44] bg-[#FFFAF4] border border-[#1E2A44]/20 rounded-xl hover:bg-[#FBEBD9] transition-all cursor-pointer subtle-shadow"
-                aria-expanded={userDropdownOpen}
-                aria-haspopup="true"
+                onClick={signOut}
+                className="px-2.5 py-1 text-xs font-bold text-[#D03B29] bg-[#FFFAF4] border border-[#D03B29]/20 hover:border-[#D03B29] rounded-xl hover:bg-[#FDECEA] transition-colors cursor-pointer subtle-shadow"
               >
-                {userAvatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={userAvatarUrl}
-                    alt={userDisplayName}
-                    className="w-5 h-5 rounded-full object-cover border border-[#1E2A44]/20"
-                  />
-                ) : (
-                  <span className="w-5 h-5 rounded-full bg-[#F47A1F] text-[#FFFAF4] flex items-center justify-center text-[10px] font-black">
-                    {userInitial}
-                  </span>
-                )}
-                <span className="max-w-[100px] truncate text-[11px] font-semibold text-[#1E2A44]">
-                  {userDisplayName}
-                </span>
-                <HugeiconsIcon icon={ArrowDown01Icon} size={14} strokeWidth={2.5} className="text-[#5B6577]" />
+                {t.nav.signOut}
               </button>
-
-              {/* User Dropdown Card */}
-              {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-[#FFFAF4] border border-[#1E2A44]/15 rounded-2xl shadow-xl p-3 z-50 flex flex-col gap-2">
-                  <div className="px-2 py-1 border-b border-[#1E2A44]/10 pb-2">
-                    <p className="text-[11px] text-[#5B6577] font-medium">{t.nav.signedInAs}</p>
-                    <p className="text-xs font-bold text-[#1E2A44] truncate">{user.email}</p>
-                    <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full bg-[#EAF6EE] text-[#2E9E5B] text-[10px] font-bold">
-                      ✓ Google Verified
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserDropdownOpen(false);
-                      signOut();
-                    }}
-                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-[#D03B29] hover:bg-[#FBEBD9] rounded-xl transition-colors cursor-pointer flex items-center justify-between"
-                  >
-                    <span>{t.nav.signOut}</span>
-                    <span className="text-[11px] text-[#D03B29]/70 font-bold">↳</span>
-                  </button>
-                </div>
-              )}
             </div>
           ) : (
             <button
@@ -255,35 +239,33 @@ export default function TopBar() {
             <div className="w-full h-9 bg-[#1E2A44]/10 rounded-xl animate-pulse mt-1" />
           ) : user ? (
             <div className="pt-2 border-t border-[#1E2A44]/10 flex flex-col gap-2">
-              <div className="flex items-center gap-2.5 px-1 py-1">
-                {userAvatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={userAvatarUrl}
-                    alt={userDisplayName}
-                    className="w-7 h-7 rounded-full object-cover border border-[#1E2A44]/20"
-                  />
-                ) : (
-                  <span className="w-7 h-7 rounded-full bg-[#F47A1F] text-[#FFFAF4] flex items-center justify-center text-xs font-black">
-                    {userInitial}
-                  </span>
-                )}
-                <div className="flex flex-col truncate">
-                  <span className="text-xs font-bold text-[#1E2A44] truncate">{userDisplayName}</span>
-                  <span className="text-[10px] text-[#5B6577] truncate">{user.email}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {userAvatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={userAvatarUrl}
+                      alt={userFirstName}
+                      className="w-7 h-7 rounded-full object-cover border border-[#1E2A44]/15 shadow-xs"
+                    />
+                  ) : (
+                    <span className="w-7 h-7 rounded-full bg-[#F47A1F] text-[#FFFAF4] flex items-center justify-center text-xs font-black shadow-xs">
+                      {userInitial}
+                    </span>
+                  )}
+                  <span className="text-xs font-bold text-[#1E2A44]">{userFirstName}</span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="px-2.5 py-1 text-xs font-bold text-[#D03B29] bg-[#FFFAF4] border border-[#D03B29]/20 hover:border-[#D03B29] rounded-xl hover:bg-[#FDECEA] transition-colors cursor-pointer"
+                >
+                  {t.nav.signOut}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  signOut();
-                }}
-                className="w-full text-left font-semibold text-xs text-[#D03B29] py-2 px-2.5 bg-[#FBEBD9]/60 rounded-xl cursor-pointer flex items-center justify-between"
-              >
-                <span>{t.nav.signOut}</span>
-                <span className="text-xs font-bold">↳</span>
-              </button>
             </div>
           ) : (
             <button

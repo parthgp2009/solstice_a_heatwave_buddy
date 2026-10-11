@@ -175,10 +175,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
 
     try {
+      const returnPath =
+        typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(returnPath)}`
         }
       });
       if (error) {
