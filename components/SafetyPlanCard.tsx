@@ -7,7 +7,10 @@ import {
   Sun01Icon,
   Briefcase01Icon,
   GlassWaterIcon,
-  Alert02Icon
+  Alert02Icon,
+  Share01Icon,
+  Copy01Icon,
+  Tick02Icon
 } from "@hugeicons/core-free-icons";
 import { useAppState } from "@/context/AppStateContext";
 import {
@@ -16,6 +19,7 @@ import {
   isVulnerableUser
 } from "@/lib/heatModel";
 import { PlanAIResponse, generateFallbackPlan } from "@/lib/aiPlan";
+import { formatSharePlanText, getWhatsAppShareUrl } from "@/lib/sharePlan";
 import AudioListenButton from "@/components/AudioListenButton";
 
 const subscribeReducedMotion = (callback: () => void) => {
@@ -254,6 +258,34 @@ export default function SafetyPlanCard() {
         } ${
           activeHealthAdvices.length > 0 ? `Health considerations: ${activeHealthAdvices.join(" ")}` : ""
         }`.slice(0, 1400);
+
+  const [copied, setCopied] = useState<boolean>(false);
+
+  const sharePlanText = formatSharePlanText({
+    city: displayCity,
+    adjustedTemp: reading.adjusted,
+    riskLevel: effectiveRiskLevel,
+    age,
+    occupation,
+    sunHours,
+    saferRanges,
+    avoidRanges,
+    hydrationLiters: targetLiters,
+    keyAdvice: activeOccupationAdvice || activeAgeAdvice,
+    lang
+  });
+
+  const handleCopyShareText = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(sharePlanText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2200);
+      }
+    } catch {
+      // Ignore clipboard write failures
+    }
+  };
 
   return (
     <div
@@ -504,6 +536,58 @@ export default function SafetyPlanCard() {
               </p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Share & Export Action Bar */}
+      <div className="bg-[#FAF4EC] border border-[#1E2A44]/10 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex flex-col">
+          <span className="text-xs font-extrabold text-[#1E2A44] flex items-center gap-1.5">
+            <HugeiconsIcon icon={Share01Icon} size={15} strokeWidth={2.4} className="text-[#F47A1F]" />
+            <span>{lang === "hi" ? "योजना साझा करें" : "Share Safety Plan"}</span>
+          </span>
+          <span className="text-[10px] text-[#5B6577] font-medium leading-tight mt-0.5">
+            {lang === "hi"
+              ? "परिवार, मित्रों या कामगारों को तुरंत हीट सुरक्षा संदेश भेजें"
+              : "Send instant heat protection briefing to family or work team"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* WhatsApp Share Button */}
+          <a
+            href={getWhatsAppShareUrl(sharePlanText)}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Share via WhatsApp"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#25D366] text-[#FFFAF4] hover:bg-[#20BD5A] transition-colors shadow-xs"
+          >
+            <span>WhatsApp</span>
+          </a>
+
+          {/* Copy to Clipboard Button */}
+          <button
+            type="button"
+            onClick={handleCopyShareText}
+            title="Copy summary text"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+              copied
+                ? "bg-[#2E9E5B] text-[#FFFAF4] border-[#2E9E5B] shadow-xs"
+                : "bg-[#FFFAF4] text-[#1E2A44] border-[#1E2A44]/20 hover:bg-[#FBEBD9]"
+            }`}
+          >
+            {copied ? (
+              <>
+                <HugeiconsIcon icon={Tick02Icon} size={13} strokeWidth={2.5} />
+                <span>{lang === "hi" ? "कॉपी हो गया!" : "Copied!"}</span>
+              </>
+            ) : (
+              <>
+                <HugeiconsIcon icon={Copy01Icon} size={13} strokeWidth={2.2} />
+                <span>{lang === "hi" ? "कॉपी करें" : "Copy"}</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
