@@ -52,7 +52,15 @@ export default function PlanBuilderCard() {
     rememberDevice,
     setRememberDevice,
     setPlanSubmitted,
-    setSelectedCityCoords
+    setSelectedCityCoords,
+    user,
+    favoriteCities,
+    toggleFavoriteCity,
+    removeFavoriteCity,
+    isCityFavorite,
+    saveAccountPreferences,
+    setSaveAccountPreferences,
+    deleteAccountData
   } = useAppState();
 
   const [activeMenuCount, setActiveMenuCount] = useState<number>(0);
@@ -188,10 +196,30 @@ export default function PlanBuilderCard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Field 1: City */}
           <div className="flex flex-col gap-1.5">
-            <label className="flex items-center gap-1.5 text-xs font-bold text-[#1E2A44]">
-              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={2.2} className="text-[#F47A1F]" />
-              <span>{t.planBuilder.cityLabel}</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-1.5 text-xs font-bold text-[#1E2A44]">
+                <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={2.2} className="text-[#F47A1F]" />
+                <span>{t.planBuilder.cityLabel}</span>
+              </label>
+              {city !== "OTHER_SEARCH" && (
+                <button
+                  type="button"
+                  onClick={() => toggleFavoriteCity(city)}
+                  title={isCityFavorite(city) ? t.planBuilder.unstarCityTooltip : t.planBuilder.starCityTooltip}
+                  className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                    isCityFavorite(city)
+                      ? "bg-[#FEF6EE] text-[#F5B83D] border-[#F5B83D]/40"
+                      : "bg-[#FFFAF4] text-[#5B6577] border-[#1E2A44]/15 hover:text-[#1E2A44]"
+                  }`}
+                  aria-label={isCityFavorite(city) ? "Unstar city" : "Star city"}
+                >
+                  <span>{isCityFavorite(city) ? "★" : "☆"}</span>
+                  <span className="text-[10px] font-semibold">
+                    {isCityFavorite(city) ? (lang === "hi" ? "सहेजा गया" : "Saved") : (lang === "hi" ? "सहेजें" : "Save")}
+                  </span>
+                </button>
+              )}
+            </div>
             <GlideSelect
               options={cityOptions}
               value={city}
@@ -216,6 +244,48 @@ export default function PlanBuilderCard() {
               ariaLabel={t.planBuilder.cityLabel}
               className="w-full"
             />
+            {/* Saved Cities Chip Row */}
+            {favoriteCities.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                <span className="text-[10px] font-bold text-[#5B6577] uppercase tracking-wider">
+                  {t.planBuilder.savedCitiesTitle}:
+                </span>
+                {favoriteCities.map(fav => (
+                  <div
+                    key={fav}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border transition-all ${
+                      city === fav
+                        ? "bg-[#F47A1F] text-[#FFFAF4] border-[#F47A1F]"
+                        : "bg-[#FBEBD9] text-[#1E2A44] border-[#1E2A44]/15 hover:bg-[#F9D9B8]"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCity(fav);
+                        setCustomCity("");
+                        setSelectedCityCoords(null);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      {fav}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFavoriteCity(fav);
+                      }}
+                      title={t.planBuilder.unstarCityTooltip}
+                      className="text-[11px] leading-none opacity-70 hover:opacity-100 cursor-pointer ml-0.5"
+                      aria-label={`Remove ${fav}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* If Other city selected, show autocomplete input */}
             {isOtherCity && (
               <div className="mt-2 flex flex-col gap-1">
@@ -424,6 +494,57 @@ export default function PlanBuilderCard() {
                 {t.planBuilder.rememberDevice}
               </span>
             </label>
+          </div>
+
+          {/* Cloud Account Preferences Section (Step 3C) */}
+          <div className="pt-3 border-t border-[#1E2A44]/10 flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-[#1E2A44]">
+                  {t.planBuilder.saveAccountPreferences}
+                </span>
+                <span className="text-[11px] text-[#5B6577] max-w-md leading-tight">
+                  {age === "Under 18"
+                    ? t.planBuilder.under18AccountNotice
+                    : t.planBuilder.saveAccountPreferencesExplain}
+                </span>
+              </div>
+
+              {/* Toggle Switch */}
+              <label
+                className={`flex items-center gap-2 cursor-pointer select-none shrink-0 ${
+                  age === "Under 18" ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <div className="relative inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    disabled={age === "Under 18"}
+                    checked={age !== "Under 18" && saveAccountPreferences}
+                    onChange={e => setSaveAccountPreferences(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-8 h-4 bg-[#5B6577]/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#2E9E5B]" />
+                </div>
+              </label>
+            </div>
+
+            {/* Delete My Saved Data Button (Requirement 5) */}
+            {user && (saveAccountPreferences || favoriteCities.length > 0) && (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== "undefined" && window.confirm(t.planBuilder.deleteAccountDataConfirm)) {
+                      deleteAccountData();
+                    }
+                  }}
+                  className="text-[11px] font-bold text-[#D92D20] hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>🗑 {t.planBuilder.deleteAccountData}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

@@ -34,6 +34,17 @@ export interface TranslationDictionary {
     customHealthPlaceholder: string;
     charsRemaining: string;
     searchCityPlaceholder: string;
+    saveAccountPreferences: string;
+    saveAccountPreferencesExplain: string;
+    under18AccountNotice: string;
+    deleteAccountData: string;
+    deleteAccountDataConfirm: string;
+    deleteAccountDataSuccess: string;
+    savedCitiesTitle: string;
+    starCityTooltip: string;
+    unstarCityTooltip: string;
+    maxFavoritesNotice: string;
+    signInToSavePrompt: string;
   };
   featureRow: {
     weatherTitle: string;
@@ -104,6 +115,17 @@ export const DICTIONARY: Record<Language, TranslationDictionary> = {
       customHealthPlaceholder: "Add something else (optional)",
       charsRemaining: "characters left",
       searchCityPlaceholder: "Type city name (e.g. Pune, Ahmedabad)...",
+      saveAccountPreferences: "Save my preferences to my account",
+      saveAccountPreferencesExplain: "Saves only your default city, occupation, and age bracket. Sensitive health details are never stored.",
+      under18AccountNotice: "Account storage is disabled for under 18s. Nothing is stored on our servers.",
+      deleteAccountData: "Delete my saved data",
+      deleteAccountDataConfirm: "Are you sure you want to delete all saved preferences and favorite cities from your account? This action cannot be undone.",
+      deleteAccountDataSuccess: "Saved preferences and favorite cities deleted successfully.",
+      savedCitiesTitle: "Saved Cities",
+      starCityTooltip: "Star this city to save to favorites",
+      unstarCityTooltip: "Remove from favorite cities",
+      maxFavoritesNotice: "You can save up to 8 favorite cities.",
+      signInToSavePrompt: "Please sign in with Google to save favorite cities and preferences.",
     },
     featureRow: {
       weatherTitle: "Live Weather Data",
@@ -177,6 +199,17 @@ export const DICTIONARY: Record<Language, TranslationDictionary> = {
       customHealthPlaceholder: "कुछ और जोड़ें (वैकल्पिक)",
       charsRemaining: "अक्षर शेष",
       searchCityPlaceholder: "शहर का नाम लिखें (जैसे पुणे, अहमदाबाद)...",
+      saveAccountPreferences: "मेरी प्राथमिकताएं मेरे खाते में सहेजें",
+      saveAccountPreferencesExplain: "केवल आपका डिफ़ॉल्ट शहर, व्यवसाय और आयु वर्ग सहेजा जाता है। संवेदनशील स्वास्थ्य विवरण कभी सहेजे नहीं जाते।",
+      under18AccountNotice: "18 वर्ष से कम उम्र के उपयोगकर्ताओं के लिए खाता भंडारण अक्षम है। सर्वर पर कुछ भी संग्रहीत नहीं होता।",
+      deleteAccountData: "मेरा सहेजा गया डेटा हटाएं",
+      deleteAccountDataConfirm: "क्या आप वाकई अपने खाते से सहेजी गई सभी प्राथमिकताएं और पसंदीदा शहर हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+      deleteAccountDataSuccess: "सहेजी गई प्राथमिकताएं और पसंदीदा शहर सफलतापूर्वक हटा दिए गए।",
+      savedCitiesTitle: "सहेजे गए शहर",
+      starCityTooltip: "पसंदीदा शहरों में जोड़ने के लिए स्टार करें",
+      unstarCityTooltip: "पसंदीदा शहरों से हटाएं",
+      maxFavoritesNotice: "आप अधिकतम 8 पसंदीदा शहर सहेज सकते हैं।",
+      signInToSavePrompt: "पसंदीदा शहर और प्राथमिकताएं सहेजने के लिए कृपया गूगल से साइन इन करें।",
     },
     featureRow: {
       weatherTitle: "लाइव मौसम डेटा",

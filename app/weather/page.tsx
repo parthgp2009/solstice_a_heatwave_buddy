@@ -21,7 +21,20 @@ import {
 } from "@hugeicons/core-free-icons";
 
 export default function WeatherPage() {
-  const { lang, city, setCity, customCity, setCustomCity, sunHours, weatherData } = useAppState();
+  const {
+    lang,
+    t,
+    city,
+    setCity,
+    customCity,
+    setCustomCity,
+    sunHours,
+    weatherData,
+    favoriteCities,
+    toggleFavoriteCity,
+    removeFavoriteCity,
+    isCityFavorite
+  } = useAppState();
 
   const cityOptions = CITIES_CONFIG.map(c => ({
     value: c.value,
@@ -59,11 +72,31 @@ export default function WeatherPage() {
           </div>
 
           {/* Quick City Switcher */}
-          <div className="shrink-0 w-full sm:w-60">
-            <label className="text-[11px] font-bold text-[#1E2A44] mb-1 flex items-center gap-1">
-              <HugeiconsIcon icon={Location01Icon} size={13} strokeWidth={2.2} className="text-[#F47A1F]" />
-              <span>{lang === "hi" ? "शहर बदलें:" : "Switch City:"}</span>
-            </label>
+          <div className="shrink-0 w-full sm:w-64 flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-[#1E2A44] flex items-center gap-1">
+                <HugeiconsIcon icon={Location01Icon} size={13} strokeWidth={2.2} className="text-[#F47A1F]" />
+                <span>{lang === "hi" ? "शहर बदलें:" : "Switch City:"}</span>
+              </label>
+              {city !== "OTHER_SEARCH" && (
+                <button
+                  type="button"
+                  onClick={() => toggleFavoriteCity(city)}
+                  title={isCityFavorite(city) ? t.planBuilder.unstarCityTooltip : t.planBuilder.starCityTooltip}
+                  className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                    isCityFavorite(city)
+                      ? "bg-[#FEF6EE] text-[#F5B83D] border-[#F5B83D]/40"
+                      : "bg-[#FFFAF4] text-[#5B6577] border-[#1E2A44]/15 hover:text-[#1E2A44]"
+                  }`}
+                  aria-label={isCityFavorite(city) ? "Unstar city" : "Star city"}
+                >
+                  <span>{isCityFavorite(city) ? "★" : "☆"}</span>
+                  <span className="text-[10px] font-semibold">
+                    {isCityFavorite(city) ? (lang === "hi" ? "सहेजा गया" : "Saved") : (lang === "hi" ? "सहेजें" : "Save")}
+                  </span>
+                </button>
+              )}
+            </div>
             <GlideSelect
               options={cityOptions}
               value={city}
@@ -79,6 +112,47 @@ export default function WeatherPage() {
               textColor="#1E2A44"
               className="w-full"
             />
+            {/* Favorite Cities Chips */}
+            {favoriteCities.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 mt-1">
+                <span className="text-[10px] font-bold text-[#5B6577] uppercase tracking-wider">
+                  {t.planBuilder.savedCitiesTitle}:
+                </span>
+                {favoriteCities.map(fav => (
+                  <div
+                    key={fav}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border transition-all ${
+                      city === fav
+                        ? "bg-[#F47A1F] text-[#FFFAF4] border-[#F47A1F]"
+                        : "bg-[#FBEBD9] text-[#1E2A44] border-[#1E2A44]/15 hover:bg-[#F9D9B8]"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCity(fav);
+                        setCustomCity("");
+                      }}
+                      className="cursor-pointer"
+                    >
+                      {fav}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFavoriteCity(fav);
+                      }}
+                      title={t.planBuilder.unstarCityTooltip}
+                      className="text-[10px] opacity-70 hover:opacity-100 cursor-pointer ml-0.5"
+                      aria-label={`Remove ${fav}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

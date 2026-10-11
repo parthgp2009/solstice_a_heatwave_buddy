@@ -65,6 +65,15 @@ export interface AppState {
   isAuthLoading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+
+  // Cloud Favorites & Preferences (Step 3C)
+  favoriteCities: string[];
+  toggleFavoriteCity: (cityToToggle: string) => Promise<void>;
+  removeFavoriteCity: (cityToRemove: string) => Promise<void>;
+  isCityFavorite: (c: string) => boolean;
+  saveAccountPreferences: boolean;
+  setSaveAccountPreferences: (val: boolean) => Promise<void>;
+  deleteAccountData: () => Promise<void>;
 }
 
 const STORAGE_KEY = "heatwave_buddy_local_state_v1";
@@ -89,6 +98,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => isSupabaseConfigured());
+  const [favoriteCities, setFavoriteCities] = useState<string[]>(["Delhi"]);
+  const [saveAccountPreferences, setSaveAccountPreferencesState] = useState<boolean>(false);
 
   // Live weather fetch on city or selected coordinates change
   useEffect(() => {
@@ -203,8 +214,185 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
       setUser(null);
+      setSaveAccountPreferencesState(false);
     } catch (err) {
       console.error("Sign out error:", err);
+    }
+  };
+
+  // Load Cloud Preferences from Supabase when user signs in
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadCloudPreferences() {
+      try {
+        const res = await fetch("/api/preferences");
+        if (res.ok) {
+          const data = await res.json();
+          if (!isCancelled && data.preferences) {
+            if (Array.isArray(data.preferences.favorite_cities) && data.preferences.favorite_cities.length > 0) {
+              setFavoriteCities(data.preferences.favorite_cities);
+            }
+            if (data.preferences.default_city) {
+              setCity(data.preferences.default_city);
+            }
+            if (data.preferences.occupation) {
+              setOccupation(data.preferences.occupation);
+            }
+            if (data.preferences.age_bracket && data.preferences.age_bracket !== "Under 18") {
+              setAge(data.preferences.age_bracket);
+              setSaveAccountPreferencesState(true);
+            }
+          }
+        }
+      } catch {
+        // Fall back gracefully if offline or unconfigured
+      }
+    }
+
+    loadCloudPreferences();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
+
+  // Sync preferences to cloud when city, occupation, or age changes and saveAccountPreferences is ON
+  useEffect(() => {
+    if (!user || !saveAccountPreferences || age === "Under 18") {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        await fetch("/api/preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            default_city: city,
+            occupation: occupation,
+            age_bracket: age,
+            favorite_cities: favoriteCities
+          })
+        });
+      } catch {
+        // Silently ignore network failures
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [city, occupation, age, user, saveAccountPreferences, favoriteCities]);
+
+  const toggleFavoriteCity = async (cityToToggle: string) => {
+    if (!user) {
+      if (typeof window !== "undefined" && window.confirm(t.planBuilder.signInToSavePrompt)) {
+        await signInWithGoogle();
+      }
+      return;
+    }
+
+    let updated: string[];
+    if (favoriteCities.includes(cityToToggle)) {
+      updated = favoriteCities.filter(c => c !== cityToToggle);
+    } else {
+      if (favoriteCities.length >= 8) {
+        if (typeof window !== "undefined") {
+          window.alert(t.planBuilder.maxFavoritesNotice);
+        }
+        return;
+      }
+      updated = [...favoriteCities, cityToToggle];
+    }
+
+    setFavoriteCities(updated);
+
+    try {
+      await fetch("/api/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          favorite_cities: updated
+        })
+      });
+    } catch {
+      // Ignore network errors
+    }
+  };
+
+  const removeFavoriteCity = async (cityToRemove: string) => {
+    const updated = favoriteCities.filter(c => c !== cityToRemove);
+    setFavoriteCities(updated);
+
+    if (user) {
+      try {
+        await fetch("/api/preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            favorite_cities: updated
+          })
+        });
+      } catch {
+        // Ignore network errors
+      }
+    }
+  };
+
+  const isCityFavorite = (c: string) => favoriteCities.includes(c);
+
+  const setSaveAccountPreferences = async (val: boolean) => {
+    if (val) {
+      if (age === "Under 18") {
+        if (typeof window !== "undefined") {
+          window.alert(t.planBuilder.under18AccountNotice);
+        }
+        return;
+      }
+      if (!user) {
+        if (typeof window !== "undefined" && window.confirm(t.planBuilder.signInToSavePrompt)) {
+          await signInWithGoogle();
+        }
+        return;
+      }
+      setSaveAccountPreferencesState(true);
+      try {
+        await fetch("/api/preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            default_city: city,
+            occupation: occupation,
+            age_bracket: age,
+            favorite_cities: favoriteCities
+          })
+        });
+      } catch {
+        // Ignore
+      }
+    } else {
+      setSaveAccountPreferencesState(false);
+    }
+  };
+
+  const deleteAccountData = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/preferences", { method: "DELETE" });
+      if (res.ok) {
+        setFavoriteCities(["Delhi"]);
+        setSaveAccountPreferencesState(false);
+        if (typeof window !== "undefined") {
+          window.alert(t.planBuilder.deleteAccountDataSuccess);
+        }
+      }
+    } catch {
+      if (typeof window !== "undefined") {
+        window.alert("Failed to delete saved data. Please check your connection.");
+      }
     }
   };
 
@@ -318,7 +506,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         user,
         isAuthLoading,
         signInWithGoogle,
-        signOut
+        signOut,
+        favoriteCities,
+        toggleFavoriteCity,
+        removeFavoriteCity,
+        isCityFavorite,
+        saveAccountPreferences,
+        setSaveAccountPreferences,
+        deleteAccountData
       }}
     >
       {children}
