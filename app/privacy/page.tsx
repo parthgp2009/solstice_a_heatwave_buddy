@@ -23,8 +23,8 @@ function PrivacyContent() {
           </h1>
           <p className="text-sm text-[#5B6577] font-medium leading-relaxed">
             {lang === "hi"
-              ? "सोलस्टाइस (लू साथी) में हम आपके व्यक्तिगत डेटा की सुरक्षा के लिए कड़े नियम लागू करते हैं।"
-              : "Solstice (Heatwave Buddy) is engineered with zero-storage principles to protect user safety and health confidentiality."}
+              ? "सोलस्टाइस: लू साथी (Solstice: Heatwave Buddy) में हम आपके व्यक्तिगत डेटा की सुरक्षा के लिए कड़े नियम लागू करते हैं।"
+              : "Solstice: Heatwave Buddy is engineered with zero-storage principles to protect user safety and health confidentiality."}
           </p>
         </div>
 

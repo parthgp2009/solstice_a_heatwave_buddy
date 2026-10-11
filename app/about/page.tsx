@@ -34,8 +34,8 @@ function AboutContent() {
           </h1>
           <p className="text-sm sm:text-base text-[#5B6577] font-medium leading-relaxed max-w-3xl">
             {lang === "hi"
-              ? "सोलस्टाइस (लू साथी) वास्तविक समय के मौसम, सटीक हीट इंडेक्स और व्यक्तिगत सुरक्षा योजनाओं के साथ भारत के नागरिकों, विशेष रूप से धूप में काम करने वाले श्रमिकों की सुरक्षा के लिए प्रतिबद्ध है।"
-              : "Solstice (Heatwave Buddy) is designed to provide real-time meteorological insights, adjusted feels-like heat stress metrics, and tailored protective plans for delivery riders, farmers, students, and vulnerable citizens across India."}
+              ? "सोलस्टाइस: लू साथी (Solstice: Heatwave Buddy) वास्तविक समय के मौसम, सटीक हीट इंडेक्स और व्यक्तिगत सुरक्षा योजनाओं के साथ भारत के नागरिकों, विशेष रूप से धूप में काम करने वाले श्रमिकों की सुरक्षा के लिए प्रतिबद्ध है।"
+              : "Solstice: Heatwave Buddy is designed to provide real-time meteorological insights, adjusted feels-like heat stress metrics, and tailored protective plans for delivery riders, farmers, students, and vulnerable citizens across India."}
           </p>
         </div>
 

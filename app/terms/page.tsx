@@ -23,7 +23,7 @@ function TermsContent() {
           </h1>
           <p className="text-sm text-[#5B6577] font-medium leading-relaxed">
             {lang === "hi"
-              ? "सोलस्टाइस (लू साथी) के उपयोग से जुड़ी महत्वपूर्ण शर्तें और सुरक्षा दिशानिर्देश।"
+              ? "सोलस्टाइस: लू साथी (Solstice: Heatwave Buddy) के उपयोग से जुड़ी महत्वपूर्ण शर्तें और सुरक्षा दिशानिर्देश।"
               : "Important guidelines regarding our occupational safety recommendations and emergency care."}
           </p>
         </div>
@@ -39,8 +39,8 @@ function TermsContent() {
             </div>
             <p className="text-xs sm:text-sm text-[#5B6577] leading-relaxed font-medium">
               {lang === "hi"
-                ? "सोलस्टाइस द्वारा प्रदान की जाने वाली योजना केवल सामान्य व्यावसायिक और गर्मी से बचाव का मार्गदर्शन है। यह किसी भी चिकित्सक, अस्पताल या प्रमाणित स्वास्थ्य पेशेवर की सलाह या निदान का स्थान नहीं ले सकती। यदि आपको कोई पूर्व चिकित्सीय समस्या है, तो हमेशा अपने डॉक्टर की सलाह का पालन करें।"
-                : "The plans and alerts provided by Solstice are general occupational heat stress guidance and preventative measures only. They do not constitute certified medical diagnosis or clinical treatment. If you have an underlying medical condition, always prioritize your licensed physician's guidance."}
+                ? "सोलस्टाइस: लू साथी (Solstice: Heatwave Buddy) द्वारा प्रदान की जाने वाली योजना केवल सामान्य व्यावसायिक और गर्मी से बचाव का मार्गदर्शन है। यह किसी भी चिकित्सक, अस्पताल या प्रमाणित स्वास्थ्य पेशेवर की सलाह या निदान का स्थान नहीं ले सकती। यदि आपको कोई पूर्व चिकित्सीय समस्या है, तो हमेशा अपने डॉक्टर की सलाह का पालन करें।"
+                : "The plans and alerts provided by Solstice: Heatwave Buddy are general occupational heat stress guidance and preventative measures only. They do not constitute certified medical diagnosis or clinical treatment. If you have an underlying medical condition, always prioritize your licensed physician's guidance."}
             </p>
           </div>
 

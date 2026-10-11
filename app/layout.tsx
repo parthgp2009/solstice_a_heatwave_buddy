@@ -17,7 +17,7 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: "Heatwave Buddy | Real-Time Personalised Heat Safety",
+  title: "Solstice: Heatwave Buddy | Real-Time Personalised Heat Safety",
   description: "Live temperature, adjusted feels-like, and personalised heat safety plans for India.",
 };
 

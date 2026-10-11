@@ -71,7 +71,7 @@ export default function TopBar() {
           <div className="relative h-8 sm:h-10 w-32 sm:w-44 flex items-center">
             <Image
               src="/logo.png"
-              alt="Solstice Heatwave Buddy Logo"
+              alt="Solstice: Heatwave Buddy Logo"
               width={180}
               height={42}
               priority

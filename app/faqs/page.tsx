@@ -15,10 +15,10 @@ interface FaqItem {
 
 const FAQ_DATA: FaqItem[] = [
   {
-    qEn: "What is Solstice (Heatwave Buddy)?",
-    qHi: "सोलस्टाइस (लू साथी) क्या है?",
-    aEn: "Solstice is a specialised heat safety platform for India. It detects real-time meteorological conditions, calculates personalized heat stress (taking into account UV index and duration in direct sun), and provides hour-by-hour guidance for outdoor workers, students, and citizens.",
-    aHi: "सोलस्टाइस (लू साथी) भारत में भीषण गर्मी से सुरक्षा का एक विशेष मंच है। यह वास्तविक समय के मौसम की जांच करता है, यूवी किरणों और धूप के समय के आधार पर हीट इंडेक्स की गणना करता है और घंटेवार सुरक्षा सलाह प्रदान करता है।"
+    qEn: "What is Solstice: Heatwave Buddy?",
+    qHi: "सोलस्टाइस: लू साथी (Solstice: Heatwave Buddy) क्या है?",
+    aEn: "Solstice: Heatwave Buddy is a specialised heat safety platform for India. It detects real-time meteorological conditions, calculates personalized heat stress (taking into account UV index and duration in direct sun), and provides hour-by-hour guidance for outdoor workers, students, and citizens.",
+    aHi: "सोलस्टाइस: लू साथी (Solstice: Heatwave Buddy) भारत में भीषण गर्मी से सुरक्षा का एक विशेष मंच है। यह वास्तविक समय के मौसम की जांच करता है, यूवी किरणों और धूप के समय के आधार पर हीट इंडेक्स की गणना करता है और घंटेवार सुरक्षा सलाह प्रदान करता है।"
   },
   {
     qEn: "How is the Adjusted Feels-Like temperature calculated?",

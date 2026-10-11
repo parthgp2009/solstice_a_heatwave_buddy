@@ -35,7 +35,7 @@ export function formatSharePlanText(options: SharePlanOptions): string {
 
   if (isHi) {
     const lines = [
-      `☀️ सोलस्टाइस दैनिक हीट सुरक्षा योजना (लू साथी)`,
+      `☀️ सोलस्टाइस: लू साथी दैनिक हीट सुरक्षा योजना (Solstice: Heatwave Buddy)`,
       `📍 स्थान: ${city} (समायोजित हीट इंडेक्स: ${options.adjustedTemp}°C · ${options.riskLevel})`,
       `👤 प्रोफाइल: ${options.age ? `उम्र ${options.age}` : ""} · ${
         options.occupation && options.occupation !== "Not specified" ? options.occupation : "नागरिक"
@@ -51,7 +51,7 @@ export function formatSharePlanText(options: SharePlanOptions): string {
   }
 
   const lines = [
-    `☀️ Solstice Daily Heat Safety Plan (Heatwave Buddy)`,
+    `☀️ Solstice: Heatwave Buddy Daily Heat Safety Plan`,
     `📍 Location: ${city} (Adjusted Heat Index: ${options.adjustedTemp}°C · ${options.riskLevel})`,
     `👤 Profile: ${options.age ? `Age ${options.age}` : ""} · ${
       options.occupation && options.occupation !== "Not specified" ? options.occupation : "Citizen"

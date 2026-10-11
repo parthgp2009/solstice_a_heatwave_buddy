@@ -82,7 +82,7 @@ export interface TranslationDictionary {
 
 export const DICTIONARY: Record<Language, TranslationDictionary> = {
   en: {
-    brand: "Heatwave Buddy",
+    brand: "Solstice: Heatwave Buddy",
     tagline: "Real-time heat. Personalised protection.",
     headlineLine1: "Stay Safe in",
     headlineLine2: "Extreme Heat",

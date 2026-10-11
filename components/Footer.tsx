@@ -34,8 +34,8 @@ export default function Footer() {
 
             <p className="text-xs sm:text-sm text-[#FFFAF4]/70 leading-relaxed font-medium max-w-sm">
               {lang === "hi"
-                ? "सोलस्टाइस (लू साथी) भारत के नागरिकों, विशेष रूप से धूप में काम करने वाले श्रमिकों के लिए वास्तविक समय की गर्मी सुरक्षा और स्वास्थ्य कार्यक्रम प्रदान करता है।"
-                : "Solstice (Heatwave Buddy) delivers real-time thermal stress telemetry, occupational hydration pacing, and customized clinical protection plans across India."}
+                ? "सोलस्टाइस: लू साथी (Solstice: Heatwave Buddy) भारत के नागरिकों, विशेष रूप से धूप में काम करने वाले श्रमिकों के लिए वास्तविक समय की गर्मी सुरक्षा और स्वास्थ्य कार्यक्रम प्रदान करता है।"
+                : "Solstice: Heatwave Buddy delivers real-time thermal stress telemetry, occupational hydration pacing, and customized clinical protection plans across India."}
             </p>
 
             {/* Emergency 108 Callout */}
@@ -116,7 +116,7 @@ export default function Footer() {
         {/* Bottom Copyright Strip */}
         <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#FFFAF4]/60 font-semibold">
           <span>
-            © 2026 Solstice Heatwave Buddy (लू साथी). All rights reserved.
+            © 2026 Solstice: Heatwave Buddy (लू साथी). All rights reserved.
           </span>
           <span>
             {lang === "hi"

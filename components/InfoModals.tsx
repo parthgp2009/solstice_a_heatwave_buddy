@@ -23,11 +23,11 @@ export default function InfoModals() {
         <p className="text-xs sm:text-sm text-[#5B6577] leading-relaxed mb-6 font-medium">
           {activeModal === "privacy"
             ? lang === "en"
-              ? "Heatwave Buddy does not log or persist user coordinates. GPS data is evaluated in-memory strictly once to fetch live weather data. Exact coordinates are never stored on any server. Personalisation inputs including age, occupation, and health history are used solely to generate your safety plan. They are never sent to a database or logged on our servers. The only optional storage is locally on your own device if you enable 'Remember on this device', and nothing is ever saved for users under 18."
-              : "लू साथी जीपीएस निर्देशांकों को कभी भी स्टोर या लॉग नहीं करता। सटीक निर्देशांक कभी भी किसी सर्वर पर सहेजे नहीं जाते। आयु, कार्य और स्वास्थ्य इतिहास का उपयोग केवल आपकी सुरक्षा योजना बनाने के लिए होता है। वे हमारे सर्वर पर कभी नहीं भेजे जाते।"
+              ? "Solstice: Heatwave Buddy does not log or persist user coordinates. GPS data is evaluated in-memory strictly once to fetch live weather data. Exact coordinates are never stored on any server. Personalisation inputs including age, occupation, and health history are used solely to generate your safety plan. They are never sent to a database or logged on our servers. The only optional storage is locally on your own device if you enable 'Remember on this device', and nothing is ever saved for users under 18."
+              : "सोलस्टाइस: लू साथी जीपीएस निर्देशांकों को कभी भी स्टोर या लॉग नहीं करता। सटीक निर्देशांक कभी भी किसी सर्वर पर सहेजे नहीं जाते। आयु, कार्य और स्वास्थ्य इतिहास का उपयोग केवल आपकी सुरक्षा योजना बनाने के लिए होता है। वे हमारे सर्वर पर कभी नहीं भेजे जाते।"
             : lang === "en"
-            ? "Heatwave Buddy provides occupational heat stress guidance and does not replace certified emergency healthcare. In any severe or life-threatening situation, call 108 immediately."
-            : "लू साथी अत्यधिक गर्मी के दौरान प्राथमिक मार्गदर्शन प्रदान करता है। यह चिकित्सीय सलाह नहीं है। गंभीर लक्षणों पर तुरंत 108 डायल करें।"}
+            ? "Solstice: Heatwave Buddy provides occupational heat stress guidance and does not replace certified emergency healthcare. In any severe or life-threatening situation, call 108 immediately."
+            : "सोलस्टाइस: लू साथी अत्यधिक गर्मी के दौरान प्राथमिक मार्गदर्शन प्रदान करता है। यह चिकित्सीय सलाह नहीं है। गंभीर लक्षणों पर तुरंत 108 डायल करें।"}
         </p>
         <div className="text-right">
           <button
