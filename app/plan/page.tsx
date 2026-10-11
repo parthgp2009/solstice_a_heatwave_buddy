@@ -5,6 +5,7 @@ import TopBar from "@/components/TopBar";
 import PlanBuilderCard from "@/components/PlanBuilderCard";
 import LiveReadingCard from "@/components/LiveReadingCard";
 import SafetyPlanCard from "@/components/SafetyPlanCard";
+import WorkRestCard from "@/components/WorkRestCard";
 import HeatstrokeEmergencyCard from "@/components/HeatstrokeEmergencyCard";
 import FeatureRow from "@/components/FeatureRow";
 import { useAppState } from "@/context/AppStateContext";
@@ -41,6 +42,7 @@ export default function SafetyPlanPage() {
           <div className="min-[900px]:col-span-6 flex flex-col gap-6">
             <LiveReadingCard />
             <SafetyPlanCard />
+            <WorkRestCard />
             <HeatstrokeEmergencyCard />
           </div>
         </div>
